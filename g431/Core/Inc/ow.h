@@ -67,6 +67,8 @@ typedef enum
   OW_STATE_FN_CMD,
   OW_STATE_DATA_W,
   OW_STATE_DATA_R,
+  OW_STATE_UPDATE_ROM_ID,
+  OW_STATE_UPDATE_ALARM_ID,
 
 } ow_state_t;
 

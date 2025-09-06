@@ -135,7 +135,9 @@ int main(void)
 //  HAL_Delay(1000);
 //  ow_read(&ds18, 0xBE, 9);
 
-  ow_read_id(&ds18);
+//  ow_read_id(&ds18);
+
+  ow_update_all_id(&ds18);
 
 
   while (1)

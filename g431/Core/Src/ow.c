@@ -31,15 +31,20 @@
 /** Private Function prototype **/
 /*************************************************************************************************/
 
-ow_err_t ow_start(ow_handle_t *handle);
-void ow_stop(ow_handle_t *handle);
+ow_err_t  ow_start(ow_handle_t *handle);
+void      ow_stop(ow_handle_t *handle);
+uint8_t   ow_crc(const uint8_t *data, uint16_t len);
+
 __STATIC_FORCEINLINE void ow_state_rst(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_rom_cmd(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_rom_id(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_read_rom_id(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_fn_cmd(ow_handle_t *handle);
+__STATIC_FORCEINLINE void ow_state_update_rom(ow_handle_t *handle);
+__STATIC_FORCEINLINE void ow_state_update_alarm(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_data_w(ow_handle_t *handle);
 __STATIC_FORCEINLINE void ow_state_data_r(ow_handle_t *handle);
+
 __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high);
 __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
 
@@ -88,6 +93,12 @@ void ow_callback(ow_handle_t *handle)
     break;
   case OW_STATE_FN_CMD:
     ow_state_fn_cmd(handle);
+    break;
+  case OW_STATE_UPDATE_ROM_ID:
+    ow_state_update_rom(handle);
+    break;
+  case OW_STATE_UPDATE_ALARM_ID:
+    ow_state_update_alarm(handle);
     break;
   case OW_STATE_DATA_W:
     ow_state_data_w(handle);
@@ -400,6 +411,30 @@ void ow_stop(ow_handle_t *handle)
   handle->state = OW_STATE_IDLE;
 }
 
+
+/*************************************************************************************************/
+/**
+ */
+uint8_t ow_crc(const uint8_t *data, uint16_t len)
+{
+  uint8_t crc = 0;
+  while (len--)
+  {
+    uint8_t inbyte = *data++;
+    for (int i = 8; i > 0; i--)
+    {
+      uint8_t mix = (crc ^ inbyte) & 0x01;
+      crc >>= 1;
+      if (mix)
+      {
+        crc ^= 0x8C;
+      }
+      inbyte >>= 1;
+    }
+  }
+  return crc;
+}
+
 /*************************************************************************************************/
 /**
  */
@@ -475,6 +510,12 @@ __STATIC_FORCEINLINE void ow_state_rom_cmd(ow_handle_t *handle)
       case OW_CMD_READ_ROM:
         handle->state = OW_STATE_READ_ROM_ID;
         break;
+      case OW_CMD_SEARCH_ROM:
+        handle->state = OW_STATE_UPDATE_ROM_ID;
+        break;
+      case OW_CMD_SEARCH_ALARM:
+        handle->state = OW_STATE_UPDATE_ALARM_ID;
+        break;
       default:
         handle->state = OW_STATE_FN_CMD;
         break;
@@ -491,49 +532,47 @@ __STATIC_FORCEINLINE void ow_state_rom_cmd(ow_handle_t *handle)
  */
 __STATIC_FORCEINLINE void ow_state_rom_id(ow_handle_t *handle)
 {
-  if (handle->buf.tmp == 0)
+  switch (handle->buf.tmp)
   {
+  case 0:
+    if (handle->rom_id[handle->buf.rom_id].rom_id_array[handle->buf.byte_i] & (1 << handle->buf.bit_i))
+    {
+      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_LOW - 1);
+    }
+    else
+    {
+      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_HIGH - 1);
+    }
     ow_write_bit(handle, false);
+    handle->buf.tmp++;
+    break;
+  case 1:
     if (handle->rom_id[handle->buf.rom_id].rom_id_array[handle->buf.byte_i] & (1 << handle->buf.bit_i))
     {
-      __HAL_TIM_SET_COUNTER(handle->tim_handle, 0);
-      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_LOW - 1);
+     __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_HIGH - 1);
     }
     else
     {
-      __HAL_TIM_SET_COUNTER(handle->tim_handle, 0);
-      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_HIGH - 1);
+     __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_LOW - 1);
     }
-    handle->buf.tmp = 1;
-  }
-  else
-  {
     ow_write_bit(handle, true);
-    if (handle->rom_id[handle->buf.rom_id].rom_id_array[handle->buf.byte_i] & (1 << handle->buf.bit_i))
-    {
-      __HAL_TIM_SET_COUNTER(handle->tim_handle, 0);
-      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_HIGH - 1);
-    }
-    else
-    {
-      __HAL_TIM_SET_COUNTER(handle->tim_handle, 0);
-      __HAL_TIM_SET_AUTORELOAD(handle->tim_handle, OW_TIM_WRITE_LOW - 1);
-    }
+    handle->buf.tmp = 0;
     handle->buf.bit_i++;
     if (handle->buf.bit_i == 8)
     {
       handle->buf.bit_i = 0;
       handle->buf.byte_i++;
-      if (handle->buf.byte_i == 8)
+      if (handle->buf.byte_i == handle->buf.w_len)
       {
         handle->buf.byte_i = 0;
         handle->state = OW_STATE_FN_CMD;
       }
     }
-    handle->buf.tmp = 0;
+    break;
+  default:
+    break;
   }
 }
-
 
 /*************************************************************************************************/
 /**
@@ -626,6 +665,22 @@ __STATIC_FORCEINLINE void ow_state_fn_cmd(ow_handle_t *handle)
   default:
     break;
   }
+}
+
+/*************************************************************************************************/
+/**
+ */
+__STATIC_FORCEINLINE void ow_state_update_rom(ow_handle_t *handle)
+{
+
+}
+
+/*************************************************************************************************/
+/**
+ */
+__STATIC_FORCEINLINE void ow_state_update_alarm(ow_handle_t *handle)
+{
+
 }
 
 /*************************************************************************************************/
