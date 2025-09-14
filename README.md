@@ -1,4 +1,4 @@
-# FSM (FINITE STATE MACHINE) Library for STM32  
+# Non-Blocking 1-Wire Library for STM32  
 ---  
 ## Please Do not Forget to get STAR, DONATE and support me on social networks. Thank you. :sparkling_heart:  
 ---   
