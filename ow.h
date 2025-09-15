@@ -2,7 +2,7 @@
 /*
  * @file        ONEW
  * @author      Nima Askari
- * @version     1.0.0
+ * @version     0.0.0
  * @license     See the LICENSE file in the root folder.
  *
  * @github      https://www.github.com/nimaltd
@@ -63,6 +63,15 @@ typedef enum
 
 typedef enum
 {
+  OW_VAL_DIFF               = 0x00,
+  OW_VAL_0                  = 0x01,
+  OW_VAL_1                  = 0x10,
+  OW_VAL_ERR                = 0x11,
+
+} ow_val_t;
+
+typedef enum
+{
   OW_CMD_READ_ROM           = 0x33,
   OW_CMD_MATCH_ROM          = 0x55,
   OW_CMD_SKIP_ROM           = 0xCC,
@@ -83,7 +92,6 @@ typedef union
   } rom_id_struct;
 
 } ow_id_t;
-
 
 typedef struct
 {
@@ -109,6 +117,16 @@ typedef struct
 
 } ow_buf_t;
 
+typedef struct __PACKED
+{
+  ow_val_t                  val;
+  int8_t                    last_discrepancy;
+  int8_t                    last_zero;
+  uint8_t                   last_device_flag;
+  uint8_t                   rom_id[8];
+
+} ow_search_t;
+
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;
@@ -128,12 +146,7 @@ typedef struct
 #if (OW_MAX_DEVICE > 1)
   uint8_t                   rom_id_found;
   ow_id_t                   rom_id[OW_MAX_DEVICE];
-  uint8_t                   search_val;
-  uint8_t                   search_found;
-  int8_t                    search_diff_idx;
-  int16_t                   search_last_discrepancy;
-  bool                      search_last_device_flag;
-  uint8_t                   search_last_rom[8];
+  ow_search_t               search;
 #endif
 
 } ow_handle_t;

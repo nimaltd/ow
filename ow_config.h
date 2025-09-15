@@ -2,7 +2,7 @@
 /*
  * @file        ONEW
  * @author      Nima Askari
- * @version     1.0.0
+ * @version     0.0.0
  * @license     See the LICENSE file in the root folder.
  *
  * @github      https://www.github.com/nimaltd
@@ -36,8 +36,8 @@
 
 /* USER CODE END OW_CONFIGURATION */
 
-#if (OW_MAX_DATA_LEN < 16)
-#error  OW_MAX_DATA_LEN should be bigger than 16!
+#if (OW_MAX_DATA_LEN < 12)
+#error  OW_MAX_DATA_LEN should be bigger than 12!
 #endif
 
 #if ((OW_MAX_DEVICE <= 0) || (OW_MAX_DEVICE >= 255))
