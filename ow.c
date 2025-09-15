@@ -42,10 +42,8 @@ __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
 /*************************************************************************************************/
 /**
  * @brief  Initialize 1-Wire handle with GPIO and timer configuration.
- *
  * @param  handle: Pointer to the 1-Wire handle to initialize.
  * @param  init: Pointer to initialization data (GPIO, pin, timer, callback).
- *
  * @retval None
  */
 void ow_init(ow_handle_t *handle, ow_init_t *init)
