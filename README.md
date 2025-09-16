@@ -1,9 +1,9 @@
 # Non-Blocking 1-Wire Library for STM32  
 ---  
 
-## ⭐ Please don’t forget to **Star** this repo  
-## 💖 Donate & support me on social networks.  
-## Thank you! ✨
+## 💖 Please Don’t Forget to **⭐ Star** this repo!
+Support me by donating or following on social networks.  
+Your support keeps this project alive! ✨
 
 -  Author:     Nima Askari  
 -  Github:     https://www.github.com/NimaLTD
