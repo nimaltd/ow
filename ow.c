@@ -557,6 +557,11 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
           handle->state = OW_STATE_DONE;
         }
       }
+      else
+      {
+        // jump to write bit phase
+        handle->buf.bit_ph = 3;
+      }
     }
     else
     {
