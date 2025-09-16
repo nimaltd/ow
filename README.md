@@ -2,8 +2,8 @@
 ---  
 
 ## ⭐ Please don’t forget to **Star** this repo  
-💖 Donate & support me on social networks.  
-Thank you! ✨
+## 💖 Donate & support me on social networks.  
+## Thank you! ✨
 
 -  Author:     Nima Askari  
 -  Github:     https://www.github.com/NimaLTD
