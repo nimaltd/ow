@@ -28,7 +28,6 @@
 
 ow_err_t  ow_start(ow_handle_t *handle);
 void      ow_stop(ow_handle_t *handle);
-uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle);
 #if (OW_MAX_DEVICE > 1)
@@ -110,6 +109,33 @@ bool ow_is_busy(ow_handle_t *handle)
 ow_err_t ow_last_error(ow_handle_t *handle)
 {
   return handle->error;
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Calculate 8-bit CRC for given data.
+ * @param  data: Pointer to the data buffer.
+ * @param  len: Length of the data in bytes.
+ * @retval Calculated CRC8 value.
+ */
+uint8_t ow_crc(const uint8_t *data, uint16_t len)
+{
+  uint8_t crc = 0;
+  while (len--)
+  {
+    uint8_t inbyte = *data++;
+    for (int i = 8; i > 0; i--)
+    {
+      uint8_t mix = (crc ^ inbyte) & 0x01;
+      crc >>= 1;
+      if (mix)
+      {
+        crc ^= 0x8C;
+      }
+      inbyte >>= 1;
+    }
+  }
+  return crc;
 }
 
 #if (OW_MAX_DEVICE == 1)
@@ -443,33 +469,6 @@ void ow_stop(ow_handle_t *handle)
   HAL_TIM_Base_Stop_IT(handle->config.tim_handle);
   ow_write_bit(handle, true);
   handle->state = OW_STATE_IDLE;
-}
-
-/*************************************************************************************************/
-/**
- * @brief  Calculate 8-bit CRC for given data.
- * @param  data: Pointer to the data buffer.
- * @param  len: Length of the data in bytes.
- * @retval Calculated CRC8 value.
- */
-uint8_t ow_crc(const uint8_t *data, uint16_t len)
-{
-  uint8_t crc = 0;
-  while (len--)
-  {
-    uint8_t inbyte = *data++;
-    for (int i = 8; i > 0; i--)
-    {
-      uint8_t mix = (crc ^ inbyte) & 0x01;
-      crc >>= 1;
-      if (mix)
-      {
-        crc ^= 0x8C;
-      }
-      inbyte >>= 1;
-    }
-  }
-  return crc;
 }
 
 /*************************************************************************************************/

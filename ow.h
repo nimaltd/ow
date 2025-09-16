@@ -154,6 +154,7 @@ void      ow_init(ow_handle_t *handle, ow_init_t *init);
 void      ow_callback(ow_handle_t *handle);
 bool      ow_is_busy(ow_handle_t *handle);
 ow_err_t  ow_last_error(ow_handle_t *handle);
+uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 ow_err_t  ow_update_rom_id(ow_handle_t *handle);
 
