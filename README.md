@@ -1,6 +1,6 @@
 # Non-Blocking 1-Wire Library for STM32  
 ---  
-## Please Do not Forget to get STAR,  
+## Please Do not Forget to get STAR  
 DONATE and support me on social networks.  
 Thank you. :sparkling_heart:  
 ---   
@@ -27,7 +27,7 @@ The library includes multi-device support, asynchronous handling, and easy integ
 ## ✨ Features
 
 - 🔹 Supports single or multiple 1-Wire devices  
-- 🔹 Fully compatible with STM32 HAL (`tim.h`, `gpio`)  
+- 🔹 Fully compatible with STM32 HAL
 - 🔹 ROM ID management (read, match, skip, search)  
 - 🔹 Error handling (bus, reset, ROM ID, length)  
 - 🔹 Non-blocking operation using timer callbacks  
