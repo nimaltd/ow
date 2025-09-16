@@ -1,9 +1,10 @@
 # Non-Blocking 1-Wire Library for STM32  
 ---  
-## Please Do not Forget to get STAR  
-DONATE and support me on social networks.  
-Thank you. :sparkling_heart:  
----   
+
+## ⭐ Please don’t forget to **Star** this repo  
+💖 Donate & support me on social networks.  
+Thank you! ✨
+
 -  Author:     Nima Askari  
 -  Github:     https://www.github.com/NimaLTD
 -  Youtube:    https://www.youtube.com/@nimaltd  
@@ -132,6 +133,6 @@ Now the library is ready and you can use all `ow_*` functions.
 
 ## 📜 License
 
-This project is licensed under the terms specified in the [LICENSE](./LICENSE) file.  
+This project is licensed under the terms specified in the [LICENSE](./LICENSE.TXT) file.  
 
 ---
