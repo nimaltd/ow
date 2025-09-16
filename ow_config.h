@@ -28,11 +28,11 @@
 
 #define OW_TIM_RST          500
 #define OW_TIM_RST_DET      100
-#define OW_TIM_WRITE_HIGH   70
+#define OW_TIM_WRITE_HIGH   90
 #define OW_TIM_WRITE_LOW    10
 #define OW_TIM_READ_LOW     10
 #define OW_TIM_READ_SAMPLE  10
-#define OW_TIM_READ_HIGH    60
+#define OW_TIM_READ_HIGH    80
 
 /* USER CODE END OW_CONFIGURATION */
 

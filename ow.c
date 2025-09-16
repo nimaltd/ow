@@ -170,7 +170,18 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint
     handle->state = OW_STATE_XFER;
     handle->buf.data[0] = OW_CMD_SKIP_ROM;
     handle->buf.data[1] = fn_cmd;
-    handle->buf.write_len = len + 2;
+    if (data != NULL)
+    {
+      for (int idx = 0; idx < len; idx++)
+      {
+        handle->buf.data[2 + idx] = data[idx];
+      }
+      handle->buf.write_len = len + 2;
+    }
+    else
+    {
+      handle->buf.write_len = 2;
+    }
 
   } while (0);
 
@@ -278,12 +289,23 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uin
     }
     handle->state = OW_STATE_XFER;
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
-    handle->buf.data[1] = fn_cmd;
     for (int idx = 0; idx < 8; idx++)
     {
-      handle->buf.data[2 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
+      handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
-    handle->buf.write_len = len + 10 ;
+    handle->buf.data[9] = fn_cmd;
+    if ((data != NULL) && (len > 0))
+    {
+      for (int idx = 0; idx < 8; idx++)
+      {
+        handle->buf.data[10 + idx] = data[idx];
+      }
+      handle->buf.write_len = len + 10;
+    }
+    else
+    {
+      handle->buf.write_len = 10;
+    }
 
   } while (0);
 
@@ -324,11 +346,11 @@ ow_err_t ow_read(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t l
     }
     handle->state = OW_STATE_XFER;
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
-    handle->buf.data[1] = fn_cmd;
     for (int idx = 0; idx < 8; idx++)
     {
-      handle->buf.data[2 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
+      handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
+    handle->buf.data[9] = fn_cmd;
     handle->buf.write_len = 10;
     handle->buf.read_len = len;
 
@@ -393,12 +415,12 @@ ow_err_t ow_start(ow_handle_t *handle)
       ow_err = OW_ERR_BUSY;
       break;
     }
+    ow_write_bit(handle, true);
     if (!ow_read_bit(handle))
     {
       ow_err = OW_ERR_BUS;
       break;
     }
-    ow_write_bit(handle, true);
     __HAL_TIM_CLEAR_IT(handle->config.tim_handle, 0xFFFFFFFF);
     memset(&handle->buf, 0, sizeof(ow_buf_t));
     __HAL_TIM_SET_COUNTER(handle->config.tim_handle, 0);
