@@ -2,7 +2,7 @@
 /*
  * @file        ONEW
  * @author      Nima Askari
- * @version     0.0.0
+ * @version     1.0.0
  * @license     See the LICENSE file in the root folder.
  *
  * @github      https://www.github.com/nimaltd

@@ -1,8 +1,8 @@
 
 /*
- * @file        OW
+ * @file        ow.c
  * @author      Nima Askari
- * @version     0.0.0
+ * @version     1.0.0
  * @license     See the LICENSE file in the root folder.
  *
  * @github      https://www.github.com/nimaltd
@@ -31,7 +31,9 @@ void      ow_stop(ow_handle_t *handle);
 uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle);
+#if (OW_MAX_DEVICE > 1)
 __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle);
+#endif
 __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high);
 __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
 
@@ -76,11 +78,11 @@ void ow_callback(ow_handle_t *handle)
     case OW_STATE_XFER:
       ow_state_xfer(handle);
       break;
-
+#if (OW_MAX_DEVICE > 1)
     case OW_STATE_SEARCH:
       ow_state_search(handle);
       break;
-
+#endif
     default:
         ow_stop(handle);
       break;
@@ -110,13 +112,14 @@ ow_err_t ow_last_error(ow_handle_t *handle)
   return handle->error;
 }
 
+#if (OW_MAX_DEVICE == 1)
 /*************************************************************************************************/
 /**
  * @brief  Start reading a single ROM ID from the 1-Wire bus.
  * @param  handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_read_single_rom_id(ow_handle_t *handle)
+ow_err_t ow_update_rom_id(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
   do
@@ -210,14 +213,14 @@ ow_err_t ow_read(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
   return handle->error;
 }
 
-#if (OW_MAX_DEVICE > 1)
+#else
 /*************************************************************************************************/
 /**
  * @brief  Start search to update all ROM IDs on the 1-Wire bus.
  * @param  handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_update_all_rom_id(ow_handle_t *handle)
+ow_err_t ow_update_rom_id(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
   do
@@ -249,7 +252,7 @@ ow_err_t ow_update_all_rom_id(ow_handle_t *handle)
  * @param  len: Length of data to write.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
+ow_err_t ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
@@ -296,7 +299,7 @@ ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, con
  * @param  len: Number of bytes to read.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
+ow_err_t ow_read(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
 {
   assert_param(handle != NULL);
   do
@@ -332,6 +335,17 @@ ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint
   } while (0);
 
   return handle->error;
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Get number of detected 1-Wire devices.
+ * @param  handle: Pointer to 1-Wire handle.
+ * @retval Count of found devices
+ */
+uint8_t ow_devices(ow_handle_t *handle)
+{
+  return handle->rom_id_found;
 }
 #endif
 
@@ -561,6 +575,21 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
       // all data has been read
       if (handle->buf.byte_idx == handle->buf.read_len)
       {
+        // read ROM ID in single device
+#if (OW_MAX_DEVICE == 1)
+        if (handle->buf.data[0] == OW_CMD_READ_ROM)
+        {
+          if (ow_crc(&handle->buf.data[1], 7) == handle->buf.data[7])
+          {
+            memcpy(handle->rom_id.rom_id_array, &handle->buf.data[1], 8);
+            handle->error = OW_ERR_NONE;
+          } 
+          else
+          {
+            handle->error = OW_ERR_ROM_ID;
+          }          
+        }
+#endif
         handle->state = OW_STATE_DONE;
       }
     }
@@ -571,6 +600,7 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
   }
 }
 
+#if (OW_MAX_DEVICE > 1)
 /*************************************************************************************************/
 /**
  * @brief  1-Wire ROM search state machine.
@@ -795,6 +825,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     break;
   }
 }
+#endif
 
 /*************************************************************************************************/
 /**

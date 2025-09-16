@@ -1,8 +1,8 @@
 
 /*
- * @file        ONEW
+ * @file        ow.h
  * @author      Nima Askari
- * @version     0.0.0
+ * @version     1.0.0
  * @license     See the LICENSE file in the root folder.
  *
  * @github      https://www.github.com/nimaltd
@@ -12,13 +12,6 @@
  *
  * Copyright (C) 2025 Nima Askari - NimaLTD. All rights reserved.
  *
- */
-
-/*
- *  ONEW (One Wire) Library Help
- *
- *  Overview:
-
  */
 
 #ifndef _OW_H_
@@ -147,6 +140,8 @@ typedef struct
   uint8_t                   rom_id_found;
   ow_id_t                   rom_id[OW_MAX_DEVICE];
   ow_search_t               search;
+#else
+  ow_id_t                   rom_id;
 #endif
 
 } ow_handle_t;
@@ -160,13 +155,15 @@ void      ow_callback(ow_handle_t *handle);
 bool      ow_is_busy(ow_handle_t *handle);
 ow_err_t  ow_last_error(ow_handle_t *handle);
 
-ow_err_t  ow_read_single_rom_id(ow_handle_t *handle);
+ow_err_t  ow_update_rom_id(ow_handle_t *handle);
+
+#if (OW_MAX_DEVICE == 1)
 ow_err_t  ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
 ow_err_t  ow_read(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len);
-#if (OW_MAX_DEVICE > 1)
-ow_err_t  ow_update_all_rom_id(ow_handle_t *handle);
-ow_err_t  ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
-ow_err_t  ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len);
+#else
+ow_err_t  ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
+ow_err_t  ow_read(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len);
+uint8_t   ow_devices(ow_handle_t *handle);
 #endif
 
 uint16_t  ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size);
