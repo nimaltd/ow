@@ -1,6 +1,8 @@
 # Non-Blocking 1-Wire Library for STM32  
 ---  
-## Please Do not Forget to get STAR, DONATE and support me on social networks. Thank you. :sparkling_heart:  
+## Please Do not Forget to get STAR,  
+DONATE and support me on social networks.  
+Thank you. :sparkling_heart:  
 ---   
 -  Author:     Nima Askari  
 -  Github:     https://www.github.com/NimaLTD
@@ -9,9 +11,16 @@
 -  Instagram:  https://instagram.com/github.NimaLTD  
 ---
 
-
 A lightweight and efficient **One Wire (1-Wire)** protocol library written in C for STM32 (HAL-based).  
-It provides full support for 1-Wire devices such as **DS18B20 temperature sensors**, with multi-device support, asynchronous handling, and easy integration with STM32 projects.  
+It provides full support for 1-Wire devices such as:  
+
+- 🌡️ **DS18B20** (temperature sensor)  
+- 🔋 **DS2431** (EEPROM)  
+- 🔐 **DS28E17** (I²C master bridge)  
+- 🔒 **DS1990A iButton** (authentication)  
+- ⚡ Any other standard Maxim/Dallas 1-Wire device  
+
+The library includes multi-device support, asynchronous handling, and easy integration with STM32 projects.  
 
 ---
 
@@ -26,65 +35,83 @@ It provides full support for 1-Wire devices such as **DS18B20 temperature sensor
 
 ---
 
-## 📂 Project Structure
+## ⚙️ Installation
 
-```
-├── ow.h             # Main header file (API definitions)
-├── ow.c             # Implementation (if separated)
-├── ow_config.h      # User configuration (max devices, buffer size, etc.)
-└── examples/        # Example STM32 projects
+You can install the library in two ways:
+
+### 1. Copy files directly  
+Copy the following files into your STM32 project:  
+- `ow.h`  
+- `ow.c`  
+- `ow_config.h`  
+
+### 2. Use STM32Cube Pack Installer (Recommended)  
+Install from the official pack repository:  
+👉 [STM32-PACK](https://github.com/nimaltd/STM32-PACK)  
+
+---
+
+## 🔧 Configuration (`ow_config.h`)
+
+This file is used to configure:  
+- Maximum number of supported devices (`OW_MAX_DEVICE`)  
+- Timing definitions  
+
+For example:  
+
+```c
+#define OW_MAX_DEVICE     4      // Number of supported devices
+#define OW_MAX_DATA_LEN   32     // Max data length
 ```
 
 ---
 
-## ⚙️ Installation
+## 🛠 CubeMX Setup
 
-1. Copy the following files into your STM32 project:
-   - `ow.h`
-   - `ow.c`
-   - `ow_config.h`
+1. **GPIO Pin**  
+   - Configure a pin as **Output Open-Drain** (e.g., `PC8`).  
 
-2. Include the library in your project:
-
-```c
-#include "ow.h"
-```
-
-3. Configure your **GPIO pin** and **Timer** in `ow_config.h`.  
+2. **Timer**  
+   - Enable a timer with **internal clock source**.  
+   - Set **Prescaler** to reach `1 µs` tick.  
+     - Example: for `170 MHz` bus → Prescaler = `170 - 1`.  
+   - Enable **Timer NVIC interrupt**.  
+   - In **Project Manager → Advanced Settings**, enable **Register Callback** for the timer.  
 
 ---
 
 ## 🚀 Usage Example
 
-### Initialization
-
+### Include header
 ```c
-ow_handle_t ow;
-ow_init_t ow_init_cfg = {
-    .tim_handle = &htim1,
-    .gpio = GPIOA,
-    .pin = GPIO_PIN_1,
-    .tim_cb = HAL_TIM_PeriodElapsedCallback
-};
-
-ow_init(&ow, &ow_init_cfg);
+#include "ow.h"
 ```
 
-### Write & Read
-
-For single-device setups:
-
+### Define a handle
 ```c
-uint8_t data[] = {0x44}; // Example: Convert T command for DS18B20
-ow_write(&ow, OW_CMD_SKIP_ROM, data, sizeof(data));
+ow_handle_t ds18;
 ```
 
-For multi-device setups:
-
+### Create a custom callback
 ```c
-uint8_t data[9];
-ow_read(&ow, device_index, 0xBE, sizeof(data)); // Read Scratchpad
+void ds18_tim_cb(TIM_HandleTypeDef *htim)
+{
+    ow_callback(&ds18);
+}
 ```
+
+### Initialize in `main.c`
+```c
+ow_init_t ow_init_struct;
+ow_init_struct.tim_handle = &htim1;
+ow_init_struct.gpio = GPIOC;
+ow_init_struct.pin = GPIO_PIN_8;
+ow_init_struct.tim_cb = ds18_tim_cb;
+
+ow_init(&ds18 , &ow_init_struct);
+```
+
+Now the library is ready and you can use all `ow_*` functions.  
 
 ---
 
@@ -103,20 +130,8 @@ ow_read(&ow, device_index, 0xBE, sizeof(data)); // Read Scratchpad
 
 ---
 
-## 🔧 Configuration (`ow_config.h`)
-
-You can define maximum devices and buffer sizes:
-
-```c
-#define OW_MAX_DEVICE     4      // Number of supported devices
-#define OW_MAX_DATA_LEN   32     // Max data length
-```
-
----
-
 ## 📜 License
 
 This project is licensed under the terms specified in the [LICENSE](./LICENSE) file.  
 
 ---
-
