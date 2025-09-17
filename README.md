@@ -1,13 +1,4 @@
 # Non-Blocking 1-Wire Library for STM32  
----  
-## Please Don’t Forget to **⭐ Star** this repo!<br>Support 💖 me by donating or following on social networks.<br>Your support keeps this project alive!<br>
-
--  Author:     Nima Askari  
--  Github:     https://www.github.com/NimaLTD
--  Youtube:    https://www.youtube.com/@nimaltd  
--  LinkedIn:   https://www.linkedin.com/in/nimaltd  
--  Instagram:  https://instagram.com/github.NimaLTD  
----
 
 A lightweight and efficient **One Wire (1-Wire)** protocol library written in C for STM32 (HAL-based).  
 It provides full support for 1-Wire devices such as:  
@@ -129,6 +120,15 @@ Now the library is ready and you can use all `ow_*` functions.
 
 ---
 
+---  
+# Please Don’t Forget to **⭐ Star** this repo!<br>Support 💖 me by donating or following on social networks.<br>Your support keeps this project alive!<br>
+
+-  Author:     Nima Askari  
+-  Github:     https://www.github.com/NimaLTD
+-  Youtube:    https://www.youtube.com/@nimaltd  
+-  LinkedIn:   https://www.linkedin.com/in/nimaltd  
+-  Instagram:  https://instagram.com/github.NimaLTD  
+---
 ## 📜 License
 
 This project is licensed under the terms specified in the [LICENSE](./LICENSE.TXT) file.  
