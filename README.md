@@ -109,6 +109,18 @@ ow_init(&ds18, &ow_init_struct);
 Now the library is ready—use any `ow_*` functions.  
 
 ---
+### Example: Reading temperature from DS18B20:
+```c 
+uint8_t data[16];
+ow_update_rom_id(&ds18);
+while (ow_is_busy(&ds18));
+HAL_Delay(10);
+ow_write_by_id(&ds18, 0, 0x44, NULL, 0);
+HAL_Delay(1000);
+ow_read_by_id(&ds18, 0, 0xBE, 9);
+while (ow_is_busy(&ds18));
+ow_read_resp(&ds18, data, 16);
+```
 
 ## 🧰 API Overview  
 
