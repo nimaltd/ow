@@ -133,9 +133,11 @@ Now the library is ready—use any `ow_*` functions.
 If you find this project useful, please **⭐ star** the repo and consider supporting!  
 
 - Author: [Nima Askari](https://www.github.com/NimaLTD)  
-- 📺 [YouTube](https://www.youtube.com/@nimaltd)  
-- 💼 [LinkedIn](https://www.linkedin.com/in/nimaltd)  
-- 📷 [Instagram](https://instagram.com/github.NimaLTD)  
+- [![YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube)](https://youtube.com/@nimaltd)
+- [![Instagram](https://img.shields.io/badge/Instagram-Follow-blue?style=for-the-badge&logo=instagram)](https://instagram.com/github.nimaltd)
+- [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/nimaltd)
+- [![Email](https://img.shields.io/badge/Email-Contact-red?style=for-the-badge&logo=gmail)](mailto:nima.askari@gmail.com)
+- [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-orange?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/nimaltd)
 
 ---
 
