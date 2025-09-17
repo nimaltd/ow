@@ -121,6 +121,7 @@ Now the library is ready and you can use all `ow_*` functions.
 | `ow_callback()` | Timer callback (must be called in IRQ) |
 | `ow_is_busy()` | Check if bus is busy |
 | `ow_last_error()` | Get last error |
+| `ow_crc()` | Calculate CRC |
 | `ow_update_rom_id()` | Update ROM ID(s) |
 | `ow_write()` | Write command & data |
 | `ow_read()` | Read from device |
