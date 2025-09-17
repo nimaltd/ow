@@ -1,110 +1,115 @@
-# Non-Blocking 1-Wire Library for STM32  
+# ⚡ Non-Blocking 1-Wire Library for STM32  
 
-A lightweight and efficient **One Wire (1-Wire)** protocol library written in C for STM32 (HAL-based).  
-It provides full support for 1-Wire devices such as:  
+A lightweight and efficient **1-Wire protocol** library written in C for STM32 (HAL-based).  
 
-- 🌡️ **DS18B20** (temperature sensor)  
-- 🔋 **DS2431** (EEPROM)  
-- 🔐 **DS28E17** (I²C master bridge)  
-- 🔒 **DS1990A iButton** (authentication)  
-- ⚡ Any other standard Maxim/Dallas 1-Wire device  
+Unlike blocking implementations, this library uses **asynchronous, non-blocking operation** driven by a single timer interrupt.  
+It can run on **any GPIO pin** configured as open-drain, making it fully flexible and easy to integrate into your STM32 projects.  
 
-The library includes multi-device support, asynchronous handling, and easy integration with STM32 projects.  
+It supports a wide range of Maxim/Dallas devices, including:  
 
----
+- 🌡️ **DS18B20** – Temperature sensor  
+- 🔋 **DS2431** – EEPROM  
+- 🔐 **DS28E17** – I²C master bridge  
+- 🔒 **DS1990A iButton** – Authentication token  
+- ⚡ Any other standard 1-Wire device  
 
-## ✨ Features
+The library is designed for:  
 
-- 🔹 Supports single or multiple 1-Wire devices  
-- 🔹 Fully compatible with STM32 HAL
-- 🔹 ROM ID management (read, match, skip, search)  
-- 🔹 Error handling (bus, reset, ROM ID, length)  
-- 🔹 Non-blocking operation using timer callbacks  
-- 🔹 Simple and modular API  
+- Projects where CPU blocking must be avoided  
+- Applications that need **multi-device 1-Wire bus support**  
+- Easy portability across different STM32 families (F0/F1/F3/F4/F7/G0/G4/H7, etc.)  
 
 ---
 
-## ⚙️ Installation
+## ✨ Features  
 
-You can install the library in two ways:
+- 🔹 Single or multiple device support (`OW_MAX_DEVICE`)  
+- 🔹 Full STM32 HAL compatibility  
+- 🔹 ROM ID operations (read, match, skip, search)  
+- 🔹 Robust error handling (reset, bus, ROM, length)  
+- 🔹 Non-blocking operation via timer callbacks  
+- 🔹 Clean and modular API  
+
+---
+
+## ⚙️ Installation  
+
+You can install in two ways:  
 
 ### 1. Copy files directly  
-Copy the following files into your STM32 project:  
+Add these files to your STM32 project:  
 - `ow.h`  
 - `ow.c`  
 - `ow_config.h`  
 
-### 2. Use STM32Cube Pack Installer (Recommended)  
-Install from the official pack repository:  
+### 2. STM32Cube Pack Installer (Recommended)  
+Available in the official pack repo:  
 👉 [STM32-PACK](https://github.com/nimaltd/STM32-PACK)  
 
 ---
 
-## 🔧 Configuration (`ow_config.h`)
+## 🔧 Configuration (`ow_config.h`)  
 
-This file is used to configure:  
-- Maximum number of supported devices (`OW_MAX_DEVICE`)  
-- Timing definitions  
-
-For example:  
+Defines library limits and timing values. Example:  
 
 ```c
-#define OW_MAX_DEVICE     4      // Number of supported devices
+#define OW_MAX_DEVICE     4      // Max number of devices
 #define OW_MAX_DATA_LEN   32     // Max data length
-```
+```  
 
 ---
 
-## 🛠 CubeMX Setup
+## 🛠 CubeMX Setup  
 
 1. **GPIO Pin**  
-   - Configure a pin as **Output Open-Drain** (e.g., `PC8`).  
+   - Configure as **Output Open-Drain** (e.g., `PC8`).  
 
 2. **Timer**  
-   - Enable a timer with **internal clock source**.  
-   - Set **Prescaler** to reach `1 µs` tick.  
-     - Example: for `170 MHz` bus → Prescaler = `170 - 1`.  
+   - Use **internal clock source**.  
+   - Prescaler set for `1 µs` tick.  
+     - Example: 170 MHz bus → Prescaler = `170 - 1`.  
    - Enable **Timer NVIC interrupt**.  
    - In **Project Manager → Advanced Settings**, enable **Register Callback** for the timer.  
 
 ---
 
-## 🚀 Usage Example
+## 🚀 Quick Start  
 
-### Include header
+### Include header  
 ```c
 #include "ow.h"
-```
+```  
 
-### Define a handle
+### Define a handle  
 ```c
 ow_handle_t ds18;
-```
+```  
 
-### Create a custom callback
+### Create a timer callback  
 ```c
 void ds18_tim_cb(TIM_HandleTypeDef *htim)
 {
     ow_callback(&ds18);
 }
-```
+```  
 
-### Initialize in `main.c`
+### Initialize in `main.c`  
 ```c
 ow_init_t ow_init_struct;
 ow_init_struct.tim_handle = &htim1;
 ow_init_struct.gpio = GPIOC;
 ow_init_struct.pin = GPIO_PIN_8;
 ow_init_struct.tim_cb = ds18_tim_cb;
+ow_init_struct.done_cb = NULL;   // Optional: callback when transfer is done
 
-ow_init(&ds18 , &ow_init_struct);
-```
+ow_init(&ds18, &ow_init_struct);
+```  
 
-Now the library is ready and you can use all `ow_*` functions.  
+Now the library is ready—use any `ow_*` functions.  
 
 ---
 
-## 🧰 API Overview
+## 🧰 API Overview  
 
 | Function | Description |
 |----------|-------------|
@@ -112,25 +117,29 @@ Now the library is ready and you can use all `ow_*` functions.
 | `ow_callback()` | Timer callback (must be called in IRQ) |
 | `ow_is_busy()` | Check if bus is busy |
 | `ow_last_error()` | Get last error |
-| `ow_crc()` | Calculate CRC |
-| `ow_update_rom_id()` | Update ROM ID(s) |
-| `ow_write()` | Write command & data |
-| `ow_read()` | Read from device |
-| `ow_read_resp()` | Get response buffer |
+| `ow_update_rom_id()` | Detect and update connected ROM IDs |
+| `ow_write_any()` | Write command + data to the bus (no specific ROM ID) |
+| `ow_read_any()` | Read data from bus (no specific ROM ID) |
+| `ow_read_resp()` | Copy response buffer to user data |
+| `ow_devices()` | Get number of detected devices *(only if multi-device enabled)* |
+| `ow_write_by_id()` | Write command + data to a specific device by ROM ID |
+| `ow_read_by_id()` | Read data from a specific device by ROM ID |  
 
 ---
 
----  
-# Please Don’t Forget to **⭐ Star** this repo!<br>Support 💖 me by donating or following on social networks.<br>Your support keeps this project alive!<br>
+## 💖 Support  
 
--  Author:     Nima Askari  
--  Github:     https://www.github.com/NimaLTD
--  Youtube:    https://www.youtube.com/@nimaltd  
--  LinkedIn:   https://www.linkedin.com/in/nimaltd  
--  Instagram:  https://instagram.com/github.NimaLTD  
+If you find this project useful, please **⭐ star** the repo and consider supporting!  
+
+- Author: [Nima Askari](https://www.github.com/NimaLTD)  
+- 📺 [YouTube](https://www.youtube.com/@nimaltd)  
+- 💼 [LinkedIn](https://www.linkedin.com/in/nimaltd)  
+- 📷 [Instagram](https://instagram.com/github.NimaLTD)  
+
 ---
-## 📜 License
 
-This project is licensed under the terms specified in the [LICENSE](./LICENSE.TXT) file.  
+## 📜 License  
+
+Licensed under the terms in the [LICENSE](./LICENSE.TXT).  
 
 ---
