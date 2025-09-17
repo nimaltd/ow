@@ -69,7 +69,8 @@ Defines library limits and timing values. Example:
    - Prescaler set for `1 µs` tick.  
      - Example: 170 MHz bus → Prescaler = `170 - 1`.  
    - Enable **Timer NVIC interrupt**.  
-   - In **Project Manager → Advanced Settings**, enable **Register Callback** for the timer.  
+   - In **Project Manager → Advanced Settings**, enable **Register Callback** for the timer.
+   - In **Project Manager → Code Generator**, enable **Generate Peripheral initialization as a pair ".c/.h" files per peripheral**.  
 
 ---
 
