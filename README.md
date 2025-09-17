@@ -94,6 +94,14 @@ void ds18_tim_cb(TIM_HandleTypeDef *htim)
 }
 ```  
 
+### Optional Done Callback
+```c
+void ds18_done_cb(ow_err_t error)
+{
+}
+
+```
+
 ### Initialize in `main.c`  
 ```c
 ow_init_t ow_init_struct;
@@ -101,14 +109,13 @@ ow_init_struct.tim_handle = &htim1;
 ow_init_struct.gpio = GPIOC;
 ow_init_struct.pin = GPIO_PIN_8;
 ow_init_struct.tim_cb = ds18_tim_cb;
-ow_init_struct.done_cb = NULL;   // Optional: callback when transfer is done
+ow_init_struct.done_cb = ds18_done_cb;   // Optional: callback when transfer is done, or can use NULL
 
 ow_init(&ds18, &ow_init_struct);
 ```  
 
 Now the library is ready—use any `ow_*` functions.  
 
----
 ### Example: Reading temperature from DS18B20:
 ```c 
 uint8_t data[16];
