@@ -86,12 +86,15 @@ typedef union
 
 } ow_id_t;
 
+typedef void (*ow_done_cb_t)(ow_err_t error);
+
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;
   GPIO_TypeDef              *gpio;
   uint16_t                  pin;
   void                      (*tim_cb)(TIM_HandleTypeDef*);
+  ow_done_cb_t              done_cb;
 
 } ow_init_t;
 
@@ -127,6 +130,7 @@ typedef struct
   uint32_t                  pin_set;
   uint32_t                  pin_reset;
   uint32_t                  pin_read;
+  ow_done_cb_t              done_cb;
 
 } ow_config_t;
 
@@ -154,16 +158,14 @@ void      ow_init(ow_handle_t *handle, ow_init_t *init);
 void      ow_callback(ow_handle_t *handle);
 bool      ow_is_busy(ow_handle_t *handle);
 ow_err_t  ow_last_error(ow_handle_t *handle);
-uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 ow_err_t  ow_update_rom_id(ow_handle_t *handle);
+ow_err_t  ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
+ow_err_t  ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len);
 
-#if (OW_MAX_DEVICE == 1)
-ow_err_t  ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
-ow_err_t  ow_read(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len);
-#else
-ow_err_t  ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
-ow_err_t  ow_read(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len);
+#if (OW_MAX_DEVICE > 1)
+ow_err_t  ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
+ow_err_t  ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len);
 uint8_t   ow_devices(ow_handle_t *handle);
 #endif
 

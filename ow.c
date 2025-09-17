@@ -28,6 +28,7 @@
 
 ow_err_t  ow_start(ow_handle_t *handle);
 void      ow_stop(ow_handle_t *handle);
+uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle);
 #if (OW_MAX_DEVICE > 1)
@@ -59,6 +60,7 @@ void ow_init(ow_handle_t *handle, ow_init_t *init)
   handle->config.pin_reset = init->pin << 16UL;
   handle->config.pin_read = init->pin;
   handle->config.tim_handle = init->tim_handle;
+  handle->config.done_cb = init->done_cb;
   HAL_TIM_RegisterCallback(handle->config.tim_handle, HAL_TIM_PERIOD_ELAPSED_CB_ID, init->tim_cb);
   ow_write_bit(handle, true);
 }
@@ -111,33 +113,6 @@ ow_err_t ow_last_error(ow_handle_t *handle)
   return handle->error;
 }
 
-/*************************************************************************************************/
-/**
- * @brief  Calculate 8-bit CRC for given data.
- * @param  data: Pointer to the data buffer.
- * @param  len: Length of the data in bytes.
- * @retval Calculated CRC8 value.
- */
-uint8_t ow_crc(const uint8_t *data, uint16_t len)
-{
-  uint8_t crc = 0;
-  while (len--)
-  {
-    uint8_t inbyte = *data++;
-    for (int i = 8; i > 0; i--)
-    {
-      uint8_t mix = (crc ^ inbyte) & 0x01;
-      crc >>= 1;
-      if (mix)
-      {
-        crc ^= 0x8C;
-      }
-      inbyte >>= 1;
-    }
-  }
-  return crc;
-}
-
 #if (OW_MAX_DEVICE == 1)
 /*************************************************************************************************/
 /**
@@ -165,6 +140,36 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 
   return handle->error;
 }
+#else
+
+/*************************************************************************************************/
+/**
+ * @brief  Start search to update all ROM IDs on the 1-Wire bus.
+ * @param  handle: Pointer to the 1-Wire handle.
+ * @retval Last error code (ow_err_t)
+ */
+ow_err_t ow_update_rom_id(ow_handle_t *handle)
+{
+  assert_param(handle != NULL);
+  do
+  {
+    handle->error = ow_start(handle);
+    if (handle->error != OW_ERR_NONE)
+    {
+      ow_stop(handle);
+      break;
+    }
+    handle->state = OW_STATE_SEARCH;
+    handle->buf.data[0] = OW_CMD_SEARCH_ROM;
+    handle->rom_id_found = 0;
+    memset(&handle->search, 0, sizeof(ow_search_t));
+    memset(handle->rom_id, 0, sizeof(handle->rom_id));
+
+  } while (0);
+
+  return handle->error;
+}
+#endif
 
 /*************************************************************************************************/
 /**
@@ -175,7 +180,7 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
  * @param  len: Length of data to write.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
+ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
@@ -183,8 +188,8 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint
   {
     if (len > OW_MAX_DATA_LEN)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_LEN;
+      ow_stop(handle);
       break;
     }
     handle->error = ow_start(handle);
@@ -222,15 +227,15 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint
  * @param  len: Number of bytes to read.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_read(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
+ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
 {
   assert_param(handle != NULL);
   do
   {
     if (len > OW_MAX_DATA_LEN)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_LEN;
+      ow_stop(handle);
       break;
     }
     handle->error = ow_start(handle);
@@ -250,35 +255,7 @@ ow_err_t ow_read(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
   return handle->error;
 }
 
-#else
-/*************************************************************************************************/
-/**
- * @brief  Start search to update all ROM IDs on the 1-Wire bus.
- * @param  handle: Pointer to the 1-Wire handle.
- * @retval Last error code (ow_err_t)
- */
-ow_err_t ow_update_rom_id(ow_handle_t *handle)
-{
-  assert_param(handle != NULL);
-  do
-  {
-    handle->error = ow_start(handle);
-    if (handle->error != OW_ERR_NONE)
-    {
-      ow_stop(handle);
-      break;
-    }
-    handle->state = OW_STATE_SEARCH;
-    handle->buf.data[0] = OW_CMD_SEARCH_ROM;
-    handle->rom_id_found = 0;
-    memset(&handle->search, 0, sizeof(ow_search_t));
-    memset(handle->rom_id, 0, sizeof(handle->rom_id));
-
-  } while (0);
-
-  return handle->error;
-}
-
+#if (OW_MAX_DEVICE > 1)
 /*************************************************************************************************/
 /**
  * @brief  Write data to a specific 1-Wire device by ROM ID.
@@ -289,7 +266,7 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
  * @param  len: Length of data to write.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
+ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
@@ -297,14 +274,14 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uin
   {
     if (len > OW_MAX_DATA_LEN)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_LEN;
+      ow_stop(handle);
       break;
     }
     if ((handle->rom_id_found == 0) || (rom_id >= handle->rom_id_found))
     {
-      ow_stop(handle);
       handle->error = OW_ERR_ROM_ID;
+      ow_stop(handle);
       break;
     }
     handle->error = ow_start(handle);
@@ -347,21 +324,21 @@ ow_err_t ow_write(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uin
  * @param  len: Number of bytes to read.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_read(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
+ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
 {
   assert_param(handle != NULL);
   do
   {
     if (len > OW_MAX_DATA_LEN)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_LEN;
+      ow_stop(handle);
       break;
     }
     if ((handle->rom_id_found == 0) || (rom_id >= handle->rom_id_found))
     {
-      ow_stop(handle);
       handle->error = OW_ERR_ROM_ID;
+      ow_stop(handle);
       break;
     }
     handle->error = ow_start(handle);
@@ -469,6 +446,37 @@ void ow_stop(ow_handle_t *handle)
   HAL_TIM_Base_Stop_IT(handle->config.tim_handle);
   ow_write_bit(handle, true);
   handle->state = OW_STATE_IDLE;
+  if (handle->config.done_cb != NULL)
+  {
+   handle->config.done_cb(handle->error);
+  }
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Calculate 8-bit CRC for given data.
+ * @param  data: Pointer to the data buffer.
+ * @param  len: Length of the data in bytes.
+ * @retval Calculated CRC8 value.
+ */
+uint8_t ow_crc(const uint8_t *data, uint16_t len)
+{
+  uint8_t crc = 0;
+  while (len--)
+  {
+    uint8_t inbyte = *data++;
+    for (int i = 8; i > 0; i--)
+    {
+      uint8_t mix = (crc ^ inbyte) & 0x01;
+      crc >>= 1;
+      if (mix)
+      {
+        crc ^= 0x8C;
+      }
+      inbyte >>= 1;
+    }
+  }
+  return crc;
 }
 
 /*************************************************************************************************/
@@ -499,8 +507,8 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
   case 2:
     if (ow_read_bit(handle) != 0)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_RESET;
+      ow_stop(handle);
     }
     else
     {
@@ -659,8 +667,8 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
   case 2:
     if (ow_read_bit(handle) != 0)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_RESET;
+      ow_stop(handle);
     }
     else
     {
@@ -782,8 +790,8 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     }
     else if (handle->search.val == OW_VAL_ERR)
     {
-      ow_stop(handle);
       handle->error = OW_ERR_ROM_ID;
+      ow_stop(handle);
     }
     break;
 
