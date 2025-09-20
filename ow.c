@@ -96,17 +96,20 @@ void ow_callback(ow_handle_t *handle)
 
   switch (handle->state)
   {
-    case OW_STATE_XFER:       /* Ongoing data transfer */
+    /* Ongoing data transfer */
+    case OW_STATE_XFER:       
       ow_state_xfer(handle);
       break;
 
 #if (OW_MAX_DEVICE > 1)
-    case OW_STATE_SEARCH:     /* ROM search operation */
+    /* ROM search operation */
+    case OW_STATE_SEARCH:     
       ow_state_search(handle);
       break;
 #endif
 
-    default:                  /* Any invalid state -> stop */
+    /* Any invalid state -> stop */
+    default:                  
       ow_stop(handle);
       break;
   }
@@ -793,7 +796,6 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     if (handle->buf.bit_idx == 8)
     {
       handle->buf.bit_idx = 0;
-
       /* Start reading phase */
       handle->buf.bit_ph = 5;
     }
