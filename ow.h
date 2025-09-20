@@ -108,11 +108,11 @@ typedef void (*ow_done_cb_t)(ow_err_t error);
 /* Used to configure OneWire handle at startup */
 typedef struct
 {
-  TIM_HandleTypeDef         *tim_handle;   /* Timer handle */
-  GPIO_TypeDef              *gpio;         /* GPIO port */
-  uint16_t                  pin;           /* GPIO pin */
+  TIM_HandleTypeDef         *tim_handle;                   /* Timer handle */
+  GPIO_TypeDef              *gpio;                         /* GPIO port */
+  uint16_t                  pin;                           /* GPIO pin */
   void                      (*tim_cb)(TIM_HandleTypeDef*); /* Timer callback */
-  ow_done_cb_t              done_cb;       /* Done callback */
+  ow_done_cb_t              done_cb;                       /* Done callback */
 
 } ow_init_t;
 
@@ -162,16 +162,16 @@ typedef struct
 /* Main driver handle containing state, config and buffers */
 typedef struct
 {
-  ow_config_t               config;        /* Static configuration */
-  ow_buf_t                  buf;           /* Transfer buffer */
-  ow_state_t                state;         /* Current state */
-  ow_err_t                  error;         /* Last error */
+  ow_config_t               config;                /* Static configuration */
+  ow_buf_t                  buf;                   /* Transfer buffer */
+  ow_state_t                state;                 /* Current state */
+  ow_err_t                  error;                 /* Last error */
 #if (OW_MAX_DEVICE > 1)
-  uint8_t                   rom_id_found;  /* Number of devices found */
+  uint8_t                   rom_id_found;          /* Number of devices found */
   ow_id_t                   rom_id[OW_MAX_DEVICE]; /* List of ROM IDs */
-  ow_search_t               search;        /* Search state */
+  ow_search_t               search;                /* Search state */
 #else
-  ow_id_t                   rom_id;        /* Single device ID */
+  ow_id_t                   rom_id;                /* Single device ID */
 #endif
 
 } ow_handle_t;
@@ -198,10 +198,10 @@ ow_err_t  ow_last_error(ow_handle_t *handle);
 /* Update device ROM ID(s) on bus */
 ow_err_t  ow_update_rom_id(ow_handle_t *handle);
 
-/* Write command + data to any device */
+/* Write command + SKIP ROM */
 ow_err_t  ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
 
-/* Read command + response from any device */
+/* Read command + SKIP ROM */
 ow_err_t  ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len);
 
 #if (OW_MAX_DEVICE > 1)
