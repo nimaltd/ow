@@ -133,17 +133,18 @@ ow_read_resp(&ds18, data, 16);
 
 | Function | Description |
 |----------|-------------|
-| `ow_init()` | Initialize ONEW handle |
+| `ow_init()` | Initialize one-wire handle |
 | `ow_callback()` | Timer callback (must be called in IRQ) |
+| `ow_crc()` | Calculate CRC |
 | `ow_is_busy()` | Check if bus is busy |
 | `ow_last_error()` | Get last error |
 | `ow_update_rom_id()` | Detect and update connected ROM IDs |
 | `ow_write_any()` | Write command + data to the bus (no specific ROM ID) |
 | `ow_read_any()` | Read data from bus (no specific ROM ID) |
-| `ow_read_resp()` | Copy response buffer to user data |
-| `ow_devices()` | Get number of detected devices *(only if multi-device enabled)* |
 | `ow_write_by_id()` | Write command + data to a specific device by ROM ID |
 | `ow_read_by_id()` | Read data from a specific device by ROM ID |  
+| `ow_devices()` | Get number of detected devices *(only if multi-device enabled)* |
+| `ow_read_resp()` | Copy response buffer to user data |
 
 ---
 
