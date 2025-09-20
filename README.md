@@ -44,7 +44,7 @@ Add these files to your STM32 project:
 
 ### 2. STM32Cube Pack Installer (Recommended)  
 Available in the official pack repo:  
-👉 [STM32-PACK](https://github.com/nimaltd/STM32-PACK)  
+👉 [STM32-PACK](https://github.com/nimaltd/STM32-PACK)  (Not Ready)
 
 ---
 
