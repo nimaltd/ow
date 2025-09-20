@@ -1,9 +1,14 @@
 
 /*
  * @file        ow.c
+ * @brief       OneWire communication driver
  * @author      Nima Askari
  * @version     1.0.0
  * @license     See the LICENSE file in the root folder.
+ *
+ * @note        All my libraries are dual-licensed. 
+ *              Please review the licensing terms before using them.
+ *              For any inquiries, feel free to contact me.
  *
  * @github      https://www.github.com/nimaltd
  * @linkedin    https://www.linkedin.com/in/nimaltd
@@ -11,7 +16,6 @@
  * @instagram   https://instagram.com/github.nimaltd
  *
  * Copyright (C) 2025 Nima Askari - NimaLTD. All rights reserved.
- *
  */
 
 /*************************************************************************************************/
@@ -26,15 +30,24 @@
 /** Private Function prototype **/
 /*************************************************************************************************/
 
+/* Start OneWire communication */
 ow_err_t  ow_start(ow_handle_t *handle);
-void      ow_stop(ow_handle_t *handle);
-uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
+/* Stop OneWire communication */
+void      ow_stop(ow_handle_t *handle);
+
+/* Handle transfer state machine */
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle);
+
 #if (OW_MAX_DEVICE > 1)
+/* Handle search state machine */
 __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle);
 #endif
+
+/* Write one bit on bus */
 __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high);
+
+/* Read one bit from bus */
 __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
 
 /*************************************************************************************************/
@@ -55,13 +68,19 @@ void ow_init(ow_handle_t *handle, ow_init_t *init)
   assert_param(init->gpio != NULL);
   assert_param(init->tim_handle != NULL);
   assert_param(init->tim_cb != NULL);
-  handle->config.gpio = init->gpio;
-  handle->config.pin_set = init->pin;
-  handle->config.pin_reset = init->pin << 16UL;
-  handle->config.pin_read = init->pin;
+
+  /* Save configuration */
+  handle->config.gpio       = init->gpio;
+  handle->config.pin_set    = init->pin;
+  handle->config.pin_reset  = init->pin << 16UL;
+  handle->config.pin_read   = init->pin;
   handle->config.tim_handle = init->tim_handle;
-  handle->config.done_cb = init->done_cb;
+  handle->config.done_cb    = init->done_cb;
+
+  /* Register user timer callback for timing events */
   HAL_TIM_RegisterCallback(handle->config.tim_handle, HAL_TIM_PERIOD_ELAPSED_CB_ID, init->tim_cb);
+
+  /* Set bus to idle state (high) */
   ow_write_bit(handle, true);
 }
 
@@ -74,20 +93,51 @@ void ow_init(ow_handle_t *handle, ow_init_t *init)
 void ow_callback(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
+
   switch (handle->state)
   {
-    case OW_STATE_XFER:
+    case OW_STATE_XFER:       /* Ongoing data transfer */
       ow_state_xfer(handle);
       break;
+
 #if (OW_MAX_DEVICE > 1)
-    case OW_STATE_SEARCH:
+    case OW_STATE_SEARCH:     /* ROM search operation */
       ow_state_search(handle);
       break;
 #endif
-    default:
-        ow_stop(handle);
+
+    default:                  /* Any invalid state -> stop */
+      ow_stop(handle);
       break;
   }
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Calculate 8-bit CRC for given data.
+ * @param  data: Pointer to the data buffer.
+ * @param  len: Length of the data in bytes.
+ * @retval Calculated CRC8 value.
+ */
+uint8_t ow_crc(const uint8_t *data, uint16_t len)
+{
+  uint8_t crc = 0;
+  while (len--)
+  {
+    uint8_t inbyte = *data++;
+    for (int i = 8; i > 0; i--)
+    {
+      /* Compute CRC using polynomial x^8 + x^5 + x^4 + 1 (0x8C) */
+      uint8_t mix = (crc ^ inbyte) & 0x01;
+      crc >>= 1;
+      if (mix)
+      {
+        crc ^= 0x8C;
+      }
+      inbyte >>= 1;
+    }
+  }
+  return crc;
 }
 
 /*************************************************************************************************/
@@ -123,21 +173,29 @@ ow_err_t ow_last_error(ow_handle_t *handle)
 ow_err_t ow_update_rom_id(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
+
   do
   {
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
-      ow_stop(handle);
-      break;
+        /* Stop bus if start failed */
+        ow_stop(handle);
+        break;
     }
+
+    /* Set state to transfer for next operation */
     handle->state = OW_STATE_XFER;
-    handle->buf.data[0] = OW_CMD_READ_ROM;
+
+    /* Prepare buffer to read ROM command (1 byte command + 8 byte response) */
+    handle->buf.data[0]   = OW_CMD_READ_ROM;
     handle->buf.write_len = 1;
-    handle->buf.read_len = 8;
+    handle->buf.read_len  = 8;
 
   } while (0);
 
+  /* Return result of operation */
   return handle->error;
 }
 #else
@@ -151,17 +209,24 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 ow_err_t ow_update_rom_id(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
+
   do
   {
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
+      /* Stop bus if start failed */
       ow_stop(handle);
       break;
     }
+
+    /* Prepare for ROM search */
     handle->state = OW_STATE_SEARCH;
     handle->buf.data[0] = OW_CMD_SEARCH_ROM;
     handle->rom_id_found = 0;
+
+    /* Clear previous search and ROM ID data */
     memset(&handle->search, 0, sizeof(ow_search_t));
     memset(handle->rom_id, 0, sizeof(handle->rom_id));
 
@@ -173,34 +238,44 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Write data to 1-Wire device.
+ * @brief  Write a command and optional data to any 1-Wire device.
  * @param  handle: Pointer to the 1-Wire handle.
- * @param  fn_cmd: Function command byte to send.
- * @param  data: Pointer to the data buffer to write.
- * @param  len: Length of data to write.
- * @retval Last error code (ow_err_t)
+ * @param  fn_cmd: Function/command byte to send.
+ * @param  data: Pointer to data buffer (can be NULL).
+ * @param  len: Length of data in bytes.
+ * @retval Error code from ow_start() or OW_ERR_LEN if data too long.
  */
 ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
+
   do
   {
+    /* Check if data length exceeds buffer */
     if (len > OW_MAX_DATA_LEN)
     {
       handle->error = OW_ERR_LEN;
       ow_stop(handle);
       break;
     }
+
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
       ow_stop(handle);
       break;
     }
+
+    /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+    /* Send SKIP ROM command */
     handle->buf.data[0] = OW_CMD_SKIP_ROM;
+    /* Send function command */
     handle->buf.data[1] = fn_cmd;
+
+    /* Copy user data if provided */
     if (data != NULL)
     {
       for (int idx = 0; idx < len; idx++)
@@ -219,36 +294,44 @@ ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, 
   return handle->error;
 }
 
-/*************************************************************************************************/
 /**
- * @brief  Read data from 1-Wire device.
+ * @brief  Read data from any 1-Wire device.
  * @param  handle: Pointer to the 1-Wire handle.
- * @param  fn_cmd: Function command byte to send.
+ * @param  fn_cmd: Function/command byte to send.
  * @param  len: Number of bytes to read.
- * @retval Last error code (ow_err_t)
+ * @retval Error code from ow_start() or OW_ERR_LEN if requested length too long.
  */
 ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
 {
   assert_param(handle != NULL);
+
   do
   {
+    /* Check if requested read length exceeds buffer */
     if (len > OW_MAX_DATA_LEN)
     {
       handle->error = OW_ERR_LEN;
       ow_stop(handle);
       break;
     }
+
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
       ow_stop(handle);
       break;
     }
+
+    /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+    /* Skip ROM for single device */
     handle->buf.data[0] = OW_CMD_SKIP_ROM;
+    /* Send function command */
     handle->buf.data[1] = fn_cmd;
     handle->buf.write_len = 2;
-    handle->buf.read_len = len;
+    /* Set expected read length */
+    handle->buf.read_len  = len;
 
   } while (0);
 
@@ -258,48 +341,60 @@ ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
 #if (OW_MAX_DEVICE > 1)
 /*************************************************************************************************/
 /**
- * @brief  Write data to a specific 1-Wire device by ROM ID.
+ * @brief  Write a command and optional data to a specific 1-Wire device by ROM ID index.
  * @param  handle: Pointer to the 1-Wire handle.
- * @param  rom_id: Index of the target ROM ID in the handle.
- * @param  fn_cmd: Function command byte to send.
- * @param  data: Pointer to the data buffer to write.
- * @param  len: Length of data to write.
- * @retval Last error code (ow_err_t)
+ * @param  rom_id: Index of the target ROM ID in handle->rom_id array.
+ * @param  fn_cmd: Function/command byte to send.
+ * @param  data: Pointer to data buffer (can be NULL).
+ * @param  len: Length of data in bytes.
+ * @retval Error code (OW_ERR_NONE on success, OW_ERR_LEN, OW_ERR_ROM_ID, etc.)
  */
 ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
+
   do
   {
+    /* Check if data length exceeds buffer */
     if (len > OW_MAX_DATA_LEN)
     {
       handle->error = OW_ERR_LEN;
       ow_stop(handle);
       break;
     }
+
+    /* Validate ROM ID index */
     if ((handle->rom_id_found == 0) || (rom_id >= handle->rom_id_found))
     {
       handle->error = OW_ERR_ROM_ID;
       ow_stop(handle);
       break;
     }
+
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
       ow_stop(handle);
       break;
     }
+
+    /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+    /* Select device by ROM */
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
     for (int idx = 0; idx < 8; idx++)
     {
       handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
+    /* Function command */
     handle->buf.data[9] = fn_cmd;
+
+    /* Copy user data if provided */
     if ((data != NULL) && (len > 0))
     {
-      for (int idx = 0; idx < 8; idx++)
+      for (int idx = 0; idx < len; idx++)
       {
         handle->buf.data[10 + idx] = data[idx];
       }
@@ -317,44 +412,56 @@ ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, con
 
 /*************************************************************************************************/
 /**
- * @brief  Read data from a specific 1-Wire device by ROM ID.
+ * @brief  Read data from a specific 1-Wire device by ROM ID index.
  * @param  handle: Pointer to the 1-Wire handle.
- * @param  rom_id: Index of the target ROM ID in the handle.
- * @param  fn_cmd: Function command byte to send.
+ * @param  rom_id: Index of the target ROM ID in handle->rom_id array.
+ * @param  fn_cmd: Function/command byte to send.
  * @param  len: Number of bytes to read.
- * @retval Last error code (ow_err_t)
+ * @retval Error code (OW_ERR_NONE on success, OW_ERR_LEN, OW_ERR_ROM_ID, etc.)
  */
 ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
 {
   assert_param(handle != NULL);
+
   do
   {
+    /* Check if requested read length exceeds buffer */
     if (len > OW_MAX_DATA_LEN)
     {
       handle->error = OW_ERR_LEN;
       ow_stop(handle);
       break;
     }
+
+    /* Validate ROM ID index */
     if ((handle->rom_id_found == 0) || (rom_id >= handle->rom_id_found))
     {
       handle->error = OW_ERR_ROM_ID;
       ow_stop(handle);
       break;
     }
+
+    /* Start 1-Wire communication */
     handle->error = ow_start(handle);
     if (handle->error != OW_ERR_NONE)
     {
       ow_stop(handle);
       break;
     }
+
+    /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+    /* Select device by ROM */
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
     for (int idx = 0; idx < 8; idx++)
     {
       handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
+    /* Function command */
     handle->buf.data[9] = fn_cmd;
+    /* Total bytes to write */
     handle->buf.write_len = 10;
+    /* Number of bytes to read */
     handle->buf.read_len = len;
 
   } while (0);
@@ -376,25 +483,31 @@ uint8_t ow_devices(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Retrieve data read from 1-Wire bus.
+ * @brief  Retrieve read response data from the 1-Wire buffer.
  * @param  handle: Pointer to the 1-Wire handle.
- * @param  data: Pointer to the buffer to store read data.
- * @param  data_size: Size of the buffer.
- * @retval Number of bytes copied to the buffer.
+ * @param  data: Pointer to user buffer to store the response.
+ * @param  data_size: Size of the user buffer in bytes.
+ * @retval Number of bytes copied to the user buffer.
  */
 uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
 {
-  uint16_t len = handle->buf.read_len;
   assert_param(handle != NULL);
   assert_param(data != NULL);
+
+  uint16_t len = handle->buf.read_len;
+
+  /* Adjust length if user buffer is smaller */
   if (data_size < len)
   {
     len = data_size;
   }
+
+  /* Copy response data from internal buffer to user buffer */
   for (uint16_t idx = 0; idx < len; idx++)
   {
     data[idx] = handle->buf.data[handle->buf.write_len + idx];
   }
+
   return len;
 }
 
@@ -404,28 +517,36 @@ uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
 
 /*************************************************************************************************/
 /**
- * @brief  Start 1-Wire communication by initializing the bus and timer.
+ * @brief  Start a 1-Wire transfer on the bus.
  * @param  handle: Pointer to the 1-Wire handle.
- * @retval Last error code (ow_err_t)
+ * @retval OW_ERR_NONE on success, or error code (OW_ERR_BUSY, OW_ERR_BUS).
  */
 ow_err_t ow_start(ow_handle_t *handle)
 {
   ow_err_t ow_err = OW_ERR_NONE;
+
   do
   {
+    /* Ensure bus is idle before starting transfer */
     if (handle->state != OW_STATE_IDLE)
     {
       ow_err = OW_ERR_BUSY;
       break;
     }
+
+    /* Pull bus high and check if line is idle */
     ow_write_bit(handle, true);
     if (!ow_read_bit(handle))
     {
       ow_err = OW_ERR_BUS;
       break;
     }
+
+    /* Clear timer interrupt and reset internal buffer */
     __HAL_TIM_CLEAR_IT(handle->config.tim_handle, 0xFFFFFFFF);
     memset(&handle->buf, 0, sizeof(ow_buf_t));
+
+    /* Configure timer for reset detection */
     __HAL_TIM_SET_COUNTER(handle->config.tim_handle, 0);
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST_DET - 1);
     HAL_TIM_Base_Start_IT(handle->config.tim_handle);
@@ -437,200 +558,164 @@ ow_err_t ow_start(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Stop 1-Wire communication and set bus idle.
- * @param  handle: Pointer to the 1-Wire handle.
- * @retval None
+ * @brief  Stop 1-Wire transfer and release the bus.
+ * @param  handle Pointer to the 1-Wire handle.
  */
 void ow_stop(ow_handle_t *handle)
 {
+  /* Stop timer interrupts */
   HAL_TIM_Base_Stop_IT(handle->config.tim_handle);
+
+  /* Release bus (set high) */
   ow_write_bit(handle, true);
+
+  /* Set state to idle */
   handle->state = OW_STATE_IDLE;
+
+  /* Call user callback if registered */
   if (handle->config.done_cb != NULL)
   {
-   handle->config.done_cb(handle->error);
+    handle->config.done_cb(handle->error);
   }
 }
 
 /*************************************************************************************************/
 /**
- * @brief  Calculate 8-bit CRC for given data.
- * @param  data: Pointer to the data buffer.
- * @param  len: Length of the data in bytes.
- * @retval Calculated CRC8 value.
- */
-uint8_t ow_crc(const uint8_t *data, uint16_t len)
-{
-  uint8_t crc = 0;
-  while (len--)
-  {
-    uint8_t inbyte = *data++;
-    for (int i = 8; i > 0; i--)
-    {
-      uint8_t mix = (crc ^ inbyte) & 0x01;
-      crc >>= 1;
-      if (mix)
-      {
-        crc ^= 0x8C;
-      }
-      inbyte >>= 1;
-    }
-  }
-  return crc;
-}
-
-/*************************************************************************************************/
-/**
- * @brief  Handle 1-Wire transfer state machine for reading/writing.
- * @param  handle: Pointer to the 1-Wire handle.
- * @retval None
+ * @brief  1-Wire state machine: handle transfer phases (reset, write, read).
+ * @param  handle Pointer to the 1-Wire handle.
  */
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
 {
   switch (handle->buf.bit_ph)
   {
-  /************ reset phase, set pin to 0 ************/
-  case 0:
-    __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST - 1);
-    ow_write_bit(handle, false);
-    handle->buf.bit_ph++;
-    break;
-
-  /************ reset phase, set pin to 1 ************/
-  case 1:
-    __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST_DET - 1);
-    ow_write_bit(handle, true);
-    handle->buf.bit_ph++;
-    break;
-
-  /************ reset phase, read pin ************/
-  case 2:
-    if (ow_read_bit(handle) != 0)
-    {
-      handle->error = OW_ERR_RESET;
-      ow_stop(handle);
-    }
-    else
-    {
+    /************ Reset phase: pull bus low ************/
+    case 0:
       __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST - 1);
+      ow_write_bit(handle, false);
       handle->buf.bit_ph++;
-    }
-    break;
+      break;
 
-  /************ writing, phase 1 ************/
-  case 3:
-    if (handle->buf.data[handle->buf.byte_idx] & (1 << handle->buf.bit_idx))
-    {
-      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_WRITE_LOW - 1);
-    }
-    else
-    {
-      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_WRITE_HIGH - 1);
-    }
-    ow_write_bit(handle, false);
-    handle->buf.bit_ph++;
-    break;
+    /************ Reset phase: release bus (high) ************/
+    case 1:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST_DET - 1);
+      ow_write_bit(handle, true);
+      handle->buf.bit_ph++;
+      break;
 
-  /************ writing, phase 2 ************/
-  case 4:
-    if (handle->buf.data[handle->buf.byte_idx] & (1 << handle->buf.bit_idx))
-    {
-      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_WRITE_HIGH - 1);
-    }
-    else
-    {
-      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_WRITE_LOW - 1);
-    }
-    ow_write_bit(handle, true);
-    handle->buf.bit_idx++;
-    // a byte sent
-    if (handle->buf.bit_idx == 8)
-    {
-      handle->buf.bit_idx = 0;
-      handle->buf.byte_idx++;
-      // all data has been written
-      if (handle->buf.byte_idx == handle->buf.write_len)
+    /************ Reset phase: check presence pulse ************/
+    case 2:
+      if (ow_read_bit(handle) != 0)
       {
-        // check for reading
-        if (handle->buf.read_len > 0)
+        handle->error = OW_ERR_RESET;
+        ow_stop(handle);
+      }
+      else
+      {
+        __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST - 1);
+        handle->buf.bit_ph++;
+      }
+      break;
+
+    /************ Writing, phase 1: pull low ************/
+    case 3:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle,
+        (handle->buf.data[handle->buf.byte_idx] & (1 << handle->buf.bit_idx)) ? OW_TIM_WRITE_LOW - 1 : OW_TIM_WRITE_HIGH - 1);
+      ow_write_bit(handle, false);
+      handle->buf.bit_ph++;
+      break;
+
+    /************ Writing, phase 2: release bus ************/
+    case 4:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle,
+        (handle->buf.data[handle->buf.byte_idx] & (1 << handle->buf.bit_idx)) ? OW_TIM_WRITE_HIGH - 1 : OW_TIM_WRITE_LOW - 1);
+      ow_write_bit(handle, true);
+      handle->buf.bit_idx++;
+
+      /* Move to next byte or reading phase */
+      if (handle->buf.bit_idx == 8)
+      {
+        handle->buf.bit_idx = 0;
+        handle->buf.byte_idx++;
+        if (handle->buf.byte_idx == handle->buf.write_len)
         {
-          // jump to reading phase
-          handle->buf.bit_ph = 5;
-          handle->buf.byte_idx = 0;
+          if (handle->buf.read_len > 0)
+          {
+            /* Start reading phase */
+            handle->buf.bit_ph = 5;
+            handle->buf.byte_idx = 0;
+          }
+          else
+          {
+            /* Writing complete, no reading */
+            handle->state = OW_STATE_DONE;
+          }
         }
-        // no need to read
         else
         {
-          handle->state = OW_STATE_DONE;
+          /* Continue writing next byte */
+          handle->buf.bit_ph = 3;
         }
       }
       else
       {
-        // jump to write bit phase
+        /* Continue writing next bit */
         handle->buf.bit_ph = 3;
       }
-    }
-    else
-    {
-      // jump to write bit phase
-      handle->buf.bit_ph = 3;
-    }
-    break;
+      break;
 
-  /************ reading, phase 1 ************/
-  case 5:
-    __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_LOW - 1);
-    ow_write_bit(handle, false);
-    handle->buf.bit_ph++;
-    break;
+    /************ Reading, phase 1: pull low ************/
+    case 5:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_LOW - 1);
+      ow_write_bit(handle, false);
+      handle->buf.bit_ph++;
+      break;
 
-  /************ reading, phase 2 ************/
-  case 6:
-    __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_SAMPLE - 1);
-    ow_write_bit(handle, true);
-    handle->buf.bit_ph++;
-    break;
+    /************ Reading, phase 2: release bus ************/
+    case 6:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_SAMPLE - 1);
+      ow_write_bit(handle, true);
+      handle->buf.bit_ph++;
+      break;
 
-  /************ reading, phase 3 ************/
-  case 7:
-    __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_HIGH - 1);
-    if (ow_read_bit(handle))
-    {
-      handle->buf.data[handle->buf.write_len + handle->buf.byte_idx] |=  (1 << handle->buf.bit_idx);
-    }
-    // jump to read phase
-    handle->buf.bit_ph = 5;
-    handle->buf.bit_idx++;
-    // a byte read
-    if (handle->buf.bit_idx == 8)
-    {
-      handle->buf.bit_idx = 0;
-      handle->buf.byte_idx++;
-      // all data has been read
-      if (handle->buf.byte_idx == handle->buf.read_len)
+    /************ Reading, phase 3: sample bus ************/
+    case 7:
+      __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_HIGH - 1);
+      if (ow_read_bit(handle))
       {
-        // read ROM ID in single device
-#if (OW_MAX_DEVICE == 1)
-        if (handle->buf.data[0] == OW_CMD_READ_ROM)
-        {
-          if (ow_crc(&handle->buf.data[1], 7) == handle->buf.data[7])
-          {
-            memcpy(handle->rom_id.rom_id_array, &handle->buf.data[1], 8);
-            handle->error = OW_ERR_NONE;
-          } 
-          else
-          {
-            handle->error = OW_ERR_ROM_ID;
-          }          
-        }
-#endif
-        handle->state = OW_STATE_DONE;
+        handle->buf.data[handle->buf.write_len + handle->buf.byte_idx] |= (1 << handle->buf.bit_idx);
       }
-    }
-    break;
 
-  default:
-    break;
+      /* Update bit/byte counters */
+      handle->buf.bit_ph = 5;
+      handle->buf.bit_idx++;
+      if (handle->buf.bit_idx == 8)
+      {
+        handle->buf.bit_idx = 0;
+        handle->buf.byte_idx++;
+        if (handle->buf.byte_idx == handle->buf.read_len)
+        {
+#if (OW_MAX_DEVICE == 1)
+          /* Single device: verify ROM ID if READ_ROM command */
+          if (handle->buf.data[0] == OW_CMD_READ_ROM)
+          {
+            if (ow_crc(&handle->buf.data[1], 7) == handle->buf.data[7])
+            {
+              memcpy(handle->rom_id.rom_id_array, &handle->buf.data[1], 8);
+              handle->error = OW_ERR_NONE;
+            }
+            else
+            {
+              handle->error = OW_ERR_ROM_ID;
+            }
+          }
+#endif
+          handle->state = OW_STATE_DONE;
+        }
+      }
+      break;
+
+    default:
+      break;
   }
 }
 
@@ -649,21 +734,21 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
 {
   switch (handle->buf.bit_ph)
   {
-  /************ reset phase, set pin to 0 ************/
+  /************ Reset phase: pull bus low ************/
   case 0:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST - 1);
     ow_write_bit(handle, false);
     handle->buf.bit_ph++;
     break;
 
-  /************ reset phase, set pin to 1 ************/
+    /************ Reset phase: release bus (high) ************/
   case 1:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_RST_DET - 1);
     ow_write_bit(handle, true);
     handle->buf.bit_ph++;
     break;
 
-  /************ reset phase, check pin ************/
+  /************ Reset phase: check presence pulse ************/
   case 2:
     if (ow_read_bit(handle) != 0)
     {
@@ -677,7 +762,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     }
     break;
 
-  /************ writing command phase 1 ************/
+  /************ Writing, phase 1: pull low ************/
   case 3:
     if (handle->buf.data[0] & (1 << handle->buf.bit_idx))
     {
@@ -691,7 +776,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     handle->buf.bit_ph++;
     break;
 
-  /************ writing command phase 2 ************/
+  /************ Writing, phase 2: release bus ************/
   case 4:
     if (handle->buf.data[0] & (1 << handle->buf.bit_idx))
     {
@@ -703,19 +788,23 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     }
     ow_write_bit(handle, true);
     handle->buf.bit_idx++;
-    // command complete
+
+    /* command complete */
     if (handle->buf.bit_idx == 8)
     {
       handle->buf.bit_idx = 0;
+
+      /* Start reading phase */
       handle->buf.bit_ph = 5;
     }
     else
     {
+      /* Writing next command bit */
       handle->buf.bit_ph = 3;
     }
     break;
 
-  /************ reading bit, phase 1 ************/
+  /************ Reading, phase 1: pull low ************/
   case 5:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_LOW - 1);
     ow_write_bit(handle, false);
@@ -743,21 +832,21 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     handle->buf.bit_ph++;
     break;
 
-    /************ reading complement bit, phase 1 ************/
+  /************ reading complement bit, phase 1 ************/
   case 8:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_LOW - 1);
     ow_write_bit(handle, false);
     handle->buf.bit_ph++;
     break;
 
-  /************ reading complement bit, phase 2 ************/
+  /************ Reading, phase 2: release bus ************/
   case 9:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_SAMPLE - 1);
     ow_write_bit(handle, true);
     handle->buf.bit_ph++;
     break;
 
-  /************ reading complement bit, phase 3 ************/
+  /************ Reading, phase 3: sample bus ************/
   case 10:
     __HAL_TIM_SET_AUTORELOAD(handle->config.tim_handle, OW_TIM_READ_HIGH - 1);
     if (ow_read_bit(handle))
@@ -765,24 +854,26 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
       handle->search.val |= OW_VAL_0;
     }
     handle->buf.bit_ph++;
-    // resolve discrepancy
-    int bit_number = handle->buf.bit_idx + 1; // Dallas counts bits 1..64
+
+    /* resolve discrepancy */
+    /* Dallas counts bits 1..64 */
+    int bit_number = handle->buf.bit_idx + 1;
     if (handle->search.val == OW_VAL_DIFF)
     {
       int bit_choice = 0;
       if (bit_number < handle->search.last_discrepancy)
       {
-        // repeat previous path
+        /* repeat previous path */
         bit_choice = (handle->search.rom_id[handle->buf.bit_idx / 8] >> (handle->buf.bit_idx % 8)) & 0x01;
       }
       else if (bit_number == handle->search.last_discrepancy)
       {
-        // this time choose 1
+        /* this time choose 1 */
         bit_choice = 1;
       }
       else
       {
-        // choose 0 and remember as last zero
+        /* choose 0 and remember as last zero */
         bit_choice = 0;
         handle->search.last_zero = bit_number;
       }
@@ -795,7 +886,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     }
     break;
 
-  /************ writing selected bit, phase 1 ************/
+  /************ Writing selected bit, phase 1: pull low ************/
   case 11:
     if (handle->search.val == OW_VAL_1)
     {
@@ -810,7 +901,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     handle->buf.bit_ph++;
     break;
 
-  /************ writing selected bit, phase 2 ************/
+  /************ Writing selected bit, phase 2: release bus ************/
   case 12:
     if (handle->search.val == OW_VAL_1)
     {
@@ -824,7 +915,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     handle->buf.bit_idx++;
     if (handle->buf.bit_idx == 64)
     {
-      // full ROM read
+      /* full ROM read */
       handle->buf.bit_idx = 0;
       handle->buf.bit_ph = 0;
       if (ow_crc(handle->search.rom_id, 7) == handle->search.rom_id[7])
@@ -833,7 +924,8 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
         handle->rom_id_found++;
       }
       memset(handle->search.rom_id, 0, 8);
-      // update discrepancy
+
+      /* update discrepancy */
       handle->search.last_discrepancy = handle->search.last_zero;
       handle->search.last_zero = 0;
       if (handle->search.last_discrepancy == 0 || handle->rom_id_found == OW_MAX_DEVICE)
@@ -843,7 +935,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
       }
       else
       {
-        // prepare next search
+        /* prepare next search */
         handle->buf.data[0] = OW_CMD_SEARCH_ROM;
         handle->buf.bit_idx = 0;
         handle->buf.bit_ph = 0;
@@ -851,7 +943,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
     }
     else
     {
-      // next search bit
+      /* next search bit */
       handle->buf.bit_ph = 5;
     }
     break;

@@ -1,9 +1,14 @@
 
 /*
- * @file        ONEW
+ * @file        ow_config.h
+ * @brief       OneWire communication driver
  * @author      Nima Askari
  * @version     1.0.0
  * @license     See the LICENSE file in the root folder.
+ *
+ * @note        All my libraries are dual-licensed. 
+ *              Please review the licensing terms before using them.
+ *              For any inquiries, feel free to contact me.
  *
  * @github      https://www.github.com/nimaltd
  * @linkedin    https://www.linkedin.com/in/nimaltd
@@ -11,7 +16,6 @@
  * @instagram   https://instagram.com/github.nimaltd
  *
  * Copyright (C) 2025 Nima Askari - NimaLTD. All rights reserved.
- *
  */
 
 #ifndef _OW_CONFIG_H_
