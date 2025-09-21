@@ -703,7 +703,7 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
           {
             if (ow_crc(&handle->buf.data[1], 7) == handle->buf.data[7])
             {
-              memcpy(handle->rom_id.rom_id_array, &handle->buf.data[1], 8);
+              memcpy(handle->rom_id[0].rom_id_array, &handle->buf.data[1], 8);
               handle->error = OW_ERR_NONE;
             }
             else

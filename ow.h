@@ -166,12 +166,10 @@ typedef struct
   ow_buf_t                  buf;                   /* Transfer buffer */
   ow_state_t                state;                 /* Current state */
   ow_err_t                  error;                 /* Last error */
+  ow_id_t                   rom_id[OW_MAX_DEVICE]; /* List of ROM IDs */
 #if (OW_MAX_DEVICE > 1)
   uint8_t                   rom_id_found;          /* Number of devices found */
-  ow_id_t                   rom_id[OW_MAX_DEVICE]; /* List of ROM IDs */
   ow_search_t               search;                /* Search state */
-#else
-  ow_id_t                   rom_id;                /* Single device ID */
 #endif
 
 } ow_handle_t;
