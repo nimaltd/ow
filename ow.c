@@ -70,12 +70,12 @@ void ow_init(ow_handle_t *handle, ow_init_t *init)
   assert_param(init->tim_cb != NULL);
 
   /* Save configuration */
-  handle->config.gpio       = init->gpio;
-  handle->config.pin_set    = init->pin;
-  handle->config.pin_reset  = init->pin << 16UL;
-  handle->config.pin_read   = init->pin;
+  handle->config.gpio = init->gpio;
+  handle->config.pin_set = init->pin;
+  handle->config.pin_reset = init->pin << 16UL;
+  handle->config.pin_read = init->pin;
   handle->config.tim_handle = init->tim_handle;
-  handle->config.done_cb    = init->done_cb;
+  handle->config.done_cb = init->done_cb;
 
   /* Register user timer callback for timing events */
   HAL_TIM_RegisterCallback(handle->config.tim_handle, HAL_TIM_PERIOD_ELAPSED_CB_ID, init->tim_cb);
@@ -125,13 +125,16 @@ void ow_callback(ow_handle_t *handle)
 uint8_t ow_crc(const uint8_t *data, uint16_t len)
 {
   uint8_t crc = 0;
+  assert_param(data != NULL);
+  assert_param(len > 0);
+
   while (len--)
   {
     uint8_t inbyte = *data++;
-    for (int i = 8; i > 0; i--)
+    for (uint8_t i = 8; i > 0; i--)
     {
       /* Compute CRC using polynomial x^8 + x^5 + x^4 + 1 (0x8C) */
-      uint8_t mix = (crc ^ inbyte) & 0x01;
+      uint8_t mix = (uint8_t)(crc ^ inbyte) & 0x01;
       crc >>= 1;
       if (mix)
       {
@@ -152,7 +155,7 @@ uint8_t ow_crc(const uint8_t *data, uint16_t len)
 bool ow_is_busy(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
-  return (handle->state != OW_STATE_IDLE);
+  return (handle->state != OW_STATE_IDLE) ? true : false;
 }
 
 /*************************************************************************************************/
@@ -163,6 +166,7 @@ bool ow_is_busy(ow_handle_t *handle)
  */
 ow_err_t ow_last_error(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
   return handle->error;
 }
 
@@ -251,7 +255,6 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
-  assert_param(data != NULL);
 
   do
   {
@@ -273,15 +276,17 @@ ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, 
 
     /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+
     /* Send SKIP ROM command */
     handle->buf.data[0] = OW_CMD_SKIP_ROM;
+
     /* Send function command */
     handle->buf.data[1] = fn_cmd;
 
     /* Copy user data if provided */
     if (data != NULL)
     {
-      for (int idx = 0; idx < len; idx++)
+      for (uint16_t idx = 0; idx < len; idx++)
       {
         handle->buf.data[2 + idx] = data[idx];
       }
@@ -328,11 +333,14 @@ ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
 
     /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+
     /* Skip ROM for single device */
     handle->buf.data[0] = OW_CMD_SKIP_ROM;
+
     /* Send function command */
     handle->buf.data[1] = fn_cmd;
     handle->buf.write_len = 2;
+
     /* Set expected read length */
     handle->buf.read_len  = len;
 
@@ -355,7 +363,6 @@ ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
 ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len)
 {
   assert_param(handle != NULL);
-  assert_param(data != NULL);
 
   do
   {
@@ -387,7 +394,7 @@ ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, con
     handle->state = OW_STATE_XFER;
     /* Select device by ROM */
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
-    for (int idx = 0; idx < 8; idx++)
+    for (uint8_t idx = 0; idx < 8; idx++)
     {
       handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
@@ -397,7 +404,7 @@ ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, con
     /* Copy user data if provided */
     if ((data != NULL) && (len > 0))
     {
-      for (int idx = 0; idx < len; idx++)
+      for (uint16_t idx = 0; idx < len; idx++)
       {
         handle->buf.data[10 + idx] = data[idx];
       }
@@ -454,6 +461,7 @@ ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint
 
     /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+
     /* Select device by ROM */
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
     for (int idx = 0; idx < 8; idx++)
@@ -462,8 +470,10 @@ ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint
     }
     /* Function command */
     handle->buf.data[9] = fn_cmd;
+
     /* Total bytes to write */
     handle->buf.write_len = 10;
+
     /* Number of bytes to read */
     handle->buf.read_len = len;
 
@@ -480,6 +490,7 @@ ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint
  */
 uint8_t ow_devices(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
   return handle->rom_id_found;
 }
 #endif
@@ -505,8 +516,22 @@ uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
     len = data_size;
   }
 
+  /* Defensive: ensure we do not read past internal buffer */
+  if ((uint32_t)(handle->buf.write_len) + (uint32_t)len > sizeof(handle->buf.data))
+  {
+    /* Truncate to available bytes */
+    if (handle->buf.write_len < sizeof(handle->buf.data))
+    {
+      len = (uint16_t)(sizeof(handle->buf.data) - (uint32_t)handle->buf.write_len);
+    }
+    else
+    {
+      return 0U;
+    }
+  }
+
   /* Copy response data from internal buffer to user buffer */
-  for (uint16_t idx = 0; idx < len; idx++)
+  for (uint16_t idx = 0U; idx < len; ++idx)
   {
     data[idx] = handle->buf.data[handle->buf.write_len + idx];
   }
@@ -527,6 +552,7 @@ uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
 ow_err_t ow_start(ow_handle_t *handle)
 {
   ow_err_t ow_err = OW_ERR_NONE;
+  assert_param(handle != NULL);
 
   do
   {
@@ -546,7 +572,7 @@ ow_err_t ow_start(ow_handle_t *handle)
     }
 
     /* Clear timer interrupt and reset internal buffer */
-    __HAL_TIM_CLEAR_IT(handle->config.tim_handle, 0xFFFFFFFF);
+    __HAL_TIM_CLEAR_IT(handle->config.tim_handle, 0xFFFFFFFFUL);
     memset(&handle->buf, 0, sizeof(ow_buf_t));
 
     /* Configure timer for reset detection */
@@ -566,6 +592,8 @@ ow_err_t ow_start(ow_handle_t *handle)
  */
 void ow_stop(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
+
   /* Stop timer interrupts */
   HAL_TIM_Base_Stop_IT(handle->config.tim_handle);
 
@@ -589,6 +617,8 @@ void ow_stop(ow_handle_t *handle)
  */
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
+
   switch (handle->buf.bit_ph)
   {
     /************ Reset phase: pull bus low ************/
@@ -735,6 +765,8 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
  */
 __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
+
   switch (handle->buf.bit_ph)
   {
   /************ Reset phase: pull bus low ************/
@@ -859,10 +891,10 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
 
     /* resolve discrepancy */
     /* Dallas counts bits 1..64 */
-    int bit_number = handle->buf.bit_idx + 1;
+    uint8_t bit_number = handle->buf.bit_idx + 1;
     if (handle->search.val == OW_VAL_DIFF)
     {
-      int bit_choice = 0;
+      uint8_t bit_choice = 0;
       if (bit_number < handle->search.last_discrepancy)
       {
         /* repeat previous path */
@@ -964,6 +996,8 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
  */
 __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
 {
+  assert_param(handle != NULL);
+
   if (high)
   {
     handle->config.gpio->BSRR = handle->config.pin_set;
@@ -982,6 +1016,8 @@ __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
  */
 __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle)
 {
+  assert_param(handle != NULL);
+
   if ((handle->config.gpio->IDR & handle->config.pin_read) == handle->config.pin_read)
   {
     return 1;
