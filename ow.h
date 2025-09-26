@@ -89,7 +89,7 @@ typedef enum
 /* Union representing 64-bit ROM ID (family, serial, crc) */
 typedef union
 {
-  uint8_t                   rom_id_array[8];
+  uint8_t                   array[8];
   struct  __PACKED
   {
     uint8_t                 family;
@@ -134,16 +134,18 @@ typedef struct
 } ow_buf_t;
 
 /*************************************************************************************************/
+#if (OW_MAX_DEVICE > 1)
 /* Maintains state for ROM search algorithm */
 typedef struct __PACKED
 {
   ow_val_t                  val;
-  int8_t                    last_discrepancy;
-  int8_t                    last_zero;
+  uint8_t                   last_discrepancy;
+  uint8_t                   last_zero;
   uint8_t                   last_device_flag;
   uint8_t                   rom_id[8];
 
 } ow_search_t;
+#endif
 
 /*************************************************************************************************/
 /* Precomputed pin operations for faster bit manipulation */
@@ -196,18 +198,12 @@ ow_err_t  ow_last_error(ow_handle_t *handle);
 /* Update device ROM ID(s) on bus */
 ow_err_t  ow_update_rom_id(ow_handle_t *handle);
 
-/* Write command + SKIP ROM */
-ow_err_t  ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
-
-/* Read command + SKIP ROM */
-ow_err_t  ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len);
+/* Transfer a command and optional data to/from a specific 1-Wire device by SKIP ROM */
+ow_err_t  ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len,  uint16_t r_len);
 
 #if (OW_MAX_DEVICE > 1)
-/* Write command + data to specific device by ROM ID index */
-ow_err_t  ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *data, uint16_t len);
-
-/* Read command + response from specific device by ROM ID index */
-ow_err_t  ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len);
+/* Transfer a command and optional data to/from a specific 1-Wire device by ROM ID index */
+ow_err_t  ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
 
 /* Return number of devices found */
 uint8_t   ow_devices(ow_handle_t *handle);

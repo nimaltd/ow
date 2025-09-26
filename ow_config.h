@@ -48,12 +48,12 @@
 
 /* USER CODE END OW_CONFIGURATION */
 
-#if (OW_MAX_DATA_LEN < 12)
-#error  OW_MAX_DATA_LEN should be bigger than 12!
+#if (OW_MAX_DATA_LEN < 8)
+#error  OW_MAX_DATA_LEN should be bigger than 8!
 #endif
 
 #if ((OW_MAX_DEVICE <= 0) || (OW_MAX_DEVICE >= 255))
-#error  OW_MAX_DEVICE should be btween 0 and 255!
+#error  OW_MAX_DEVICE should be btween 1 and 255!
 #endif
 
 
