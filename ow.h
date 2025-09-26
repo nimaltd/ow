@@ -199,7 +199,7 @@ ow_err_t  ow_last_error(ow_handle_t *handle);
 ow_err_t  ow_update_rom_id(ow_handle_t *handle);
 
 /* Transfer a command and optional data to/from a specific 1-Wire device by SKIP ROM */
-ow_err_t  ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len,  uint16_t r_len);
+ow_err_t  ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
 
 #if (OW_MAX_DEVICE > 1)
 /* Transfer a command and optional data to/from a specific 1-Wire device by ROM ID index */
