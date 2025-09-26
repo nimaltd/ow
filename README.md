@@ -122,9 +122,9 @@ uint8_t data[16];
 ow_update_rom_id(&ds18);
 while (ow_is_busy(&ds18));
 HAL_Delay(10);
-ow_write_by_id(&ds18, 0, 0x44, NULL, 0);
+ow_xfer_by_id(&ds18, 0, 0x44, NULL, 0, 0);
 HAL_Delay(1000);
-ow_read_by_id(&ds18, 0, 0xBE, 9);
+ow_xfer_by_id(&ds18, 0, 0xBE, NULL, 0, 9);
 while (ow_is_busy(&ds18));
 ow_read_resp(&ds18, data, 16);
 ```
@@ -139,10 +139,8 @@ ow_read_resp(&ds18, data, 16);
 | `ow_is_busy()` | Check if bus is busy |
 | `ow_last_error()` | Get last error |
 | `ow_update_rom_id()` | Detect and update connected ROM IDs |
-| `ow_write_any()` | Write command + data to the bus (no specific ROM ID) |
-| `ow_read_any()` | Read data from bus (no specific ROM ID) |
-| `ow_write_by_id()` | Write command + data to a specific device by ROM ID |
-| `ow_read_by_id()` | Read data from a specific device by ROM ID |  
+| `ow_xfer()` | Write command + Read/Write data to/from the bus (no specific ROM ID) |
+| `ow_xfer_by_id()` | Write command + Read/Write data to/from the bus (selected ROM ID) |
 | `ow_devices()` | Get number of detected devices *(only if multi-device enabled)* |
 | `ow_read_resp()` | Copy response buffer to user data |
 
