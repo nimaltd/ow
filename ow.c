@@ -302,6 +302,7 @@ ow_err_t ow_write_any(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *data, 
   return handle->error;
 }
 
+/*************************************************************************************************/
 /**
  * @brief  Read data from any 1-Wire device.
  * @param  handle: Pointer to the 1-Wire handle.
@@ -392,12 +393,14 @@ ow_err_t ow_write_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, con
 
     /* Prepare transfer buffer */
     handle->state = OW_STATE_XFER;
+    
     /* Select device by ROM */
     handle->buf.data[0] = OW_CMD_MATCH_ROM;
     for (uint8_t idx = 0; idx < 8; idx++)
     {
       handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
+    
     /* Function command */
     handle->buf.data[9] = fn_cmd;
 
@@ -468,6 +471,7 @@ ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint
     {
       handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
     }
+    
     /* Function command */
     handle->buf.data[9] = fn_cmd;
 
