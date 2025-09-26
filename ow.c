@@ -267,8 +267,63 @@ ow_err_t ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uin
       break;
     }
 
+<<<<<<< HEAD
     /* Check if requested read/read length exceeds buffer */
     if (w_len + r_len > OW_MAX_DATA_LEN)
+=======
+    /* Start 1-Wire communication */
+    handle->error = ow_start(handle);
+    if (handle->error != OW_ERR_NONE)
+    {
+      ow_stop(handle);
+      break;
+    }
+
+    /* Prepare transfer buffer */
+    handle->state = OW_STATE_XFER;
+
+    /* Send SKIP ROM command */
+    handle->buf.data[0] = OW_CMD_SKIP_ROM;
+
+    /* Send function command */
+    handle->buf.data[1] = fn_cmd;
+
+    /* Copy user data if provided */
+    if (data != NULL)
+    {
+      for (uint16_t idx = 0; idx < len; idx++)
+      {
+        handle->buf.data[2 + idx] = data[idx];
+      }
+      handle->buf.write_len = len + 2;
+    }
+    else
+    {
+      handle->buf.write_len = 2;
+    }
+
+  } while (0);
+
+  return handle->error;
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Read data from any 1-Wire device.
+ * @param  handle: Pointer to the 1-Wire handle.
+ * @param  fn_cmd: Function/command byte to send.
+ * @param  len: Number of bytes to read.
+ * @retval Error code from ow_start() or OW_ERR_LEN if requested length too long.
+ */
+ow_err_t ow_read_any(ow_handle_t *handle, uint8_t fn_cmd, uint16_t len)
+{
+  assert_param(handle != NULL);
+
+  do
+  {
+    /* Check if requested read length exceeds buffer */
+    if (len > OW_MAX_DATA_LEN)
+>>>>>>> ca63d8d3b7cbb84194e4fcd2770d072ca86eb437
     {
       handle->error = OW_ERR_LEN;
       ow_stop(handle);
@@ -390,9 +445,75 @@ ow_err_t ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, cons
     {
       handle->buf.write_len = 10;
     }
+<<<<<<< HEAD
     
     /* Set expected read length */
     handle->buf.read_len  = r_len;
+=======
+
+  } while (0);
+
+  return handle->error;
+}
+
+/*************************************************************************************************/
+/**
+ * @brief  Read data from a specific 1-Wire device by ROM ID index.
+ * @param  handle: Pointer to the 1-Wire handle.
+ * @param  rom_id: Index of the target ROM ID in handle->rom_id array.
+ * @param  fn_cmd: Function/command byte to send.
+ * @param  len: Number of bytes to read.
+ * @retval Error code (OW_ERR_NONE on success, OW_ERR_LEN, OW_ERR_ROM_ID, etc.)
+ */
+ow_err_t ow_read_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, uint16_t len)
+{
+  assert_param(handle != NULL);
+
+  do
+  {
+    /* Check if requested read length exceeds buffer */
+    if (len > OW_MAX_DATA_LEN)
+    {
+      handle->error = OW_ERR_LEN;
+      ow_stop(handle);
+      break;
+    }
+
+    /* Validate ROM ID index */
+    if ((handle->rom_id_found == 0) || (rom_id >= handle->rom_id_found))
+    {
+      handle->error = OW_ERR_ROM_ID;
+      ow_stop(handle);
+      break;
+    }
+
+    /* Start 1-Wire communication */
+    handle->error = ow_start(handle);
+    if (handle->error != OW_ERR_NONE)
+    {
+      ow_stop(handle);
+      break;
+    }
+
+    /* Prepare transfer buffer */
+    handle->state = OW_STATE_XFER;
+
+    /* Select device by ROM */
+    handle->buf.data[0] = OW_CMD_MATCH_ROM;
+    for (int idx = 0; idx < 8; idx++)
+    {
+      handle->buf.data[1 + idx] = handle->rom_id[rom_id].rom_id_array[idx];
+    }
+    
+    /* Function command */
+    handle->buf.data[9] = fn_cmd;
+
+    /* Total bytes to write */
+    handle->buf.write_len = 10;
+
+    /* Number of bytes to read */
+    handle->buf.read_len = len;
+>>>>>>> ca63d8d3b7cbb84194e4fcd2770d072ca86eb437
 
   } while (0);
 
