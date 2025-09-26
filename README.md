@@ -1,4 +1,4 @@
-# ⚡ Non-Blocking 1-Wire Library for STM32  
+# ⚡ Non-Blocking One-Wire (1-Wire) Library for STM32  
 
 A lightweight and efficient **1-Wire protocol** library written in C for STM32 (HAL-based).  
 
