@@ -181,7 +181,7 @@ typedef struct
 /*************************************************************************************************/
 
 /* Initialize OneWire driver */
-void      ow_init(ow_handle_t *handle, ow_init_t *init);
+void      ow_init(ow_handle_t *handle, const ow_init_t *init);
 
 /* Must be called in timer ISR to handle timing */
 void      ow_callback(ow_handle_t *handle);

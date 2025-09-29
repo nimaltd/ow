@@ -57,11 +57,10 @@ __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
 /*************************************************************************************************/
 /**
  * @brief  Initialize 1-Wire handle with GPIO and timer configuration.
- * @param  handle: Pointer to the 1-Wire handle to initialize.
- * @param  init: Pointer to initialization data (GPIO, pin, timer, callback).
- * @retval None
+ * @param[in,out]  handle: Pointer to the 1-Wire handle to initialize.
+ * @param[in]  init: Pointer to initialization data (GPIO, pin, timer, callback).
  */
-void ow_init(ow_handle_t *handle, ow_init_t *init)
+void ow_init(ow_handle_t *handle, const ow_init_t *init)
 {
   assert_param(handle != NULL);
   assert_param(init != NULL);
@@ -86,9 +85,8 @@ void ow_init(ow_handle_t *handle, ow_init_t *init)
 
 /*************************************************************************************************/
 /**
- * @brief  Handle 1-Wire timer callback and call state handlers.
- * @param  handle: Pointer to the 1-Wire handle.
- * @retval None
+ * @brief Handle 1-Wire timer callback and call state handlers.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  */
 void ow_callback(ow_handle_t *handle)
 {
@@ -117,9 +115,9 @@ void ow_callback(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Calculate 8-bit CRC for given data.
- * @param  data: Pointer to the data buffer.
- * @param  len: Length of the data in bytes.
+ * @brief Calculate 8-bit CRC for given data.
+ * @param[in] data: Pointer to the data buffer.
+ * @param[in] len: Length of the data in bytes.
  * @retval Calculated CRC8 value.
  */
 uint8_t ow_crc(const uint8_t *data, uint16_t len)
@@ -148,8 +146,8 @@ uint8_t ow_crc(const uint8_t *data, uint16_t len)
 
 /*************************************************************************************************/
 /**
- * @brief  Check if 1-Wire bus is busy.
- * @param  handle: Pointer to the 1-Wire handle.
+ * @brief Check if 1-Wire bus is busy.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval true if busy, false if idle
  */
 bool ow_is_busy(ow_handle_t *handle)
@@ -160,8 +158,8 @@ bool ow_is_busy(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Get the last 1-Wire error.
- * @param  handle: Pointer to the 1-Wire handle.
+ * @brief Get the last 1-Wire error.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
 ow_err_t ow_last_error(ow_handle_t *handle)
@@ -173,8 +171,8 @@ ow_err_t ow_last_error(ow_handle_t *handle)
 #if (OW_MAX_DEVICE == 1)
 /*************************************************************************************************/
 /**
- * @brief  Start reading a single ROM ID from the 1-Wire bus.
- * @param  handle: Pointer to the 1-Wire handle.
+ * @brief Start reading a single ROM ID from the 1-Wire bus.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
 ow_err_t ow_update_rom_id(ow_handle_t *handle)
@@ -209,8 +207,8 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 #else
 /*************************************************************************************************/
 /**
- * @brief  Start search to update all ROM IDs on the 1-Wire bus.
- * @param  handle: Pointer to the 1-Wire handle.
+ * @brief Start search to update all ROM IDs on the 1-Wire bus.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
 ow_err_t ow_update_rom_id(ow_handle_t *handle)
@@ -245,12 +243,12 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Transfer a command and optional data to/from a specific 1-Wire device by Skip ROM.
- * @param  handle Pointer to the 1-Wire handle structure.
- * @param  fn_cmd Function or command byte to send.
- * @param  w_data Pointer to the data buffer to write (can be NULL if w_len is 0).
- * @param  w_len Number of bytes to write from w_data (can be 0).
- * @param  r_len Number of bytes to read (can be 0).
+ * @brief Transfer a command and optional data to/from a specific 1-Wire device by Skip ROM.
+ * @param[in] handle Pointer to the 1-Wire handle structure.
+ * @param[in] fn_cmd Function or command byte to send.
+ * @param[in] w_data Pointer to the data buffer to write (can be NULL if w_len is 0).
+ * @param[in] w_len Number of bytes to write from w_data (can be 0).
+ * @param[in] r_len Number of bytes to read (can be 0).
  * @retval Error code (ow_err_t).
  */
 ow_err_t ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
@@ -317,13 +315,13 @@ ow_err_t ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uin
 #if (OW_MAX_DEVICE > 1)
 /*************************************************************************************************/
 /**
- * @brief  Transfer a command and optional data to/from a specific 1-Wire device by ROM ID index.
- * @param  handle Pointer to the 1-Wire handle structure.
- * @param  rom_id Index of the target ROM ID in the handle's rom_id array.
- * @param  fn_cmd Function or command byte to send.
- * @param  w_data Pointer to the data buffer to write (can be NULL if w_len is 0).
- * @param  w_len Number of bytes to write from w_data (can be 0).
- * @param  r_len Number of bytes to read into the internal buffer (can be 0).
+ * @brief Transfer a command and optional data to/from a specific 1-Wire device by ROM ID index.
+ * @param[in] handle Pointer to the 1-Wire handle structure.
+ * @param[in] rom_id Index of the target ROM ID in the handle's rom_id array.
+ * @param[in] fn_cmd Function or command byte to send.
+ * @param[in] w_data Pointer to the data buffer to write (can be NULL if w_len is 0).
+ * @param[in] w_len Number of bytes to write from w_data (can be 0).
+ * @param[in] r_len Number of bytes to read into the internal buffer (can be 0).
  * @retval Error code (ow_err_t).
  */
 ow_err_t ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
@@ -401,8 +399,8 @@ ow_err_t ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, cons
 
 /*************************************************************************************************/
 /**
- * @brief  Get number of detected 1-Wire devices.
- * @param  handle: Pointer to 1-Wire handle.
+ * @brief Get number of detected 1-Wire devices.
+ * @param[in] handle: Pointer to 1-Wire handle.
  * @retval Count of found devices
  */
 uint8_t ow_devices(ow_handle_t *handle)
@@ -414,10 +412,10 @@ uint8_t ow_devices(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Retrieve read response data from the 1-Wire buffer.
- * @param  handle: Pointer to the 1-Wire handle.
- * @param  data: Pointer to user buffer to store the response.
- * @param  data_size: Size of the user buffer in bytes.
+ * @brief Retrieve read response data from the 1-Wire buffer.
+ * @param[in] handle: Pointer to the 1-Wire handle.
+ * @param[in] data: Pointer to user buffer to store the response.
+ * @param[in] data_size: Size of the user buffer in bytes.
  * @retval Number of bytes copied to the user buffer.
  */
 uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
@@ -462,8 +460,8 @@ uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
 
 /*************************************************************************************************/
 /**
- * @brief  Start a 1-Wire transfer on the bus.
- * @param  handle: Pointer to the 1-Wire handle.
+ * @brief Start a 1-Wire transfer on the bus.
+ * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval OW_ERR_NONE on success, or error code (OW_ERR_BUSY, OW_ERR_BUS).
  */
 ow_err_t ow_start(ow_handle_t *handle)
@@ -504,8 +502,8 @@ ow_err_t ow_start(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Stop 1-Wire transfer and release the bus.
- * @param  handle Pointer to the 1-Wire handle.
+ * @brief Stop 1-Wire transfer and release the bus.
+ * @param[in] handle Pointer to the 1-Wire handle.
  */
 void ow_stop(ow_handle_t *handle)
 {
@@ -529,8 +527,8 @@ void ow_stop(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  1-Wire state machine: handle transfer phases (reset, write, read).
- * @param  handle Pointer to the 1-Wire handle.
+ * @brief 1-Wire state machine: handle transfer phases (reset, write, read).
+ * @param[in] handle Pointer to the 1-Wire handle.
  */
 __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
 {
@@ -906,10 +904,9 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
 
 /*************************************************************************************************/
 /**
- * @brief  Set 1-Wire bus pin high or low.
- * @param  handle: Pointer to 1-Wire handle.
- * @param  high: true to set high, false to set low.
- * @retval None
+ * @brief Set 1-Wire bus pin high or low.
+ * @param[in] handle: Pointer to 1-Wire handle.
+ * @param[in] high: true to set high, false to set low.
  */
 __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
 {
@@ -927,8 +924,8 @@ __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
 
 /*************************************************************************************************/
 /**
- * @brief  Read current level of 1-Wire bus pin.
- * @param  handle: Pointer to 1-Wire handle.
+ * @brief Read current level of 1-Wire bus pin.
+ * @param[in] handle: Pointer to 1-Wire handle.
  * @retval 1 if high, 0 if low
  */
 __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle)
