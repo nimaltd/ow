@@ -3,7 +3,7 @@
 A lightweight and efficient **1-Wire protocol** library written in C for STM32 (HAL-based).  
 
 Unlike blocking implementations, this library uses **asynchronous, non-blocking operation** driven by a single timer interrupt.  
-It can run on **any GPIO pin**.  
+It can run on **any GPIO pins** .  
 
 It supports a wide range of Maxim/Dallas devices, including:  
 
