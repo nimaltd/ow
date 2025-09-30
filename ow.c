@@ -64,15 +64,37 @@ void ow_init(ow_handle_t *handle, const ow_init_t *init)
 {
   assert_param(handle != NULL);
   assert_param(init != NULL);
-  assert_param(init->gpio != NULL);
   assert_param(init->tim_handle != NULL);
   assert_param(init->tim_cb != NULL);
 
   /* Save configuration */
-  handle->config.gpio = init->gpio;
+#if (OW_2_PINS == 0)
+  assert_param(init->gpio != NULL);
+  assert_param(IS_GPIO_PIN(init->pin) != false);
   handle->config.pin_set = init->pin;
   handle->config.pin_reset = init->pin << 16UL;
   handle->config.pin_read = init->pin;
+  handle->config.gpio = init->gpio;
+#else
+  assert_param(init->gpio_tx != NULL);
+  assert_param(init->gpio_rx != NULL);
+  assert_param(IS_GPIO_PIN(init->pin_rx) != false);
+  assert_param(IS_GPIO_PIN(init->pin_tx) != false);
+  if (init->invert_tx == false)
+  {
+    handle->config.pin_set = init->pin_tx;
+    handle->config.pin_reset = init->pin_tx << 16UL;
+  }
+  else
+  {
+    handle->config.pin_reset = init->pin_tx;
+    handle->config.pin_set = init->pin_tx << 16UL;
+  }
+  handle->config.gpio_rx = init->gpio_rx;
+  handle->config.pin_read = init->pin_rx;
+  handle->config.read_invert = init->invert_rx;
+  handle->config.gpio = init->gpio_tx;
+#endif
   handle->config.tim_handle = init->tim_handle;
   handle->config.done_cb = init->done_cb;
 
@@ -912,14 +934,7 @@ __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
 {
   assert_param(handle != NULL);
 
-  if (high)
-  {
-    handle->config.gpio->BSRR = handle->config.pin_set;
-  }
-  else
-  {
-    handle->config.gpio->BSRR = handle->config.pin_reset;
-  }
+  handle->config.gpio->BSRR = (high ? handle->config.pin_set : handle->config.pin_reset);
 }
 
 /*************************************************************************************************/
@@ -932,14 +947,18 @@ __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
 
-  if ((handle->config.gpio->IDR & handle->config.pin_read) == handle->config.pin_read)
+#if (OW_2_PINS == 0)
+  return ((handle->config.gpio->IDR & handle->config.pin_read) ? 1 : 0);
+#else
+  if (handle->config.read_invert == false)
   {
-    return 1;
+    return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 1 : 0);
   }
   else
   {
-    return 0;
+    return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 0 : 1);
   }
+#endif
 }
 
 /*************************************************************************************************/

@@ -109,10 +109,19 @@ typedef void (*ow_done_cb_t)(ow_err_t error);
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;                   /* Timer handle */
-  GPIO_TypeDef              *gpio;                         /* GPIO port */
-  uint16_t                  pin;                           /* GPIO pin */
   void                      (*tim_cb)(TIM_HandleTypeDef*); /* Timer callback */
   ow_done_cb_t              done_cb;                       /* Done callback */
+#if (OW_2_PINS == 0)
+  GPIO_TypeDef              *gpio;                         /* GPIO TX/RX port */
+  uint16_t                  pin;                           /* GPIO TX/RX pin */
+#else
+  GPIO_TypeDef              *gpio_tx;                      /* GPIO TX port */
+  uint16_t                  pin_tx;                        /* GPIO TX pin */
+  bool                      invert_tx;                     /* Invert TX pin */
+  GPIO_TypeDef              *gpio_rx;                      /* GPIO RX port */
+  uint16_t                  pin_rx;                        /* GPIO RX pin */
+  bool                      invert_rx;                     /* Invert RX pin */
+#endif
 
 } ow_init_t;
 
@@ -152,11 +161,15 @@ typedef struct __PACKED
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;
+  ow_done_cb_t              done_cb;
   GPIO_TypeDef              *gpio;
   uint32_t                  pin_set;
   uint32_t                  pin_reset;
   uint32_t                  pin_read;
-  ow_done_cb_t              done_cb;
+#if (OW_2_PINS == 1)
+  bool                      read_invert;
+  GPIO_TypeDef              *gpio_rx;
+#endif
 
 } ow_config_t;
 

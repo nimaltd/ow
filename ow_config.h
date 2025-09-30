@@ -37,6 +37,7 @@
 
 #define OW_MAX_DATA_LEN     16
 #define OW_MAX_DEVICE       5
+#define OW_2_PINS           1
 
 #define OW_TIM_RST          500
 #define OW_TIM_RST_DET      100
@@ -55,7 +56,6 @@
 #if ((OW_MAX_DEVICE <= 0) || (OW_MAX_DEVICE >= 255))
 #error  OW_MAX_DEVICE should be btween 1 and 255!
 #endif
-
 
 /*************************************************************************************************/
 /** End of File **/

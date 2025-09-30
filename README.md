@@ -55,6 +55,7 @@ Defines library limits and timing values. Example:
 ```c
 #define OW_MAX_DEVICE     4      // Max number of devices
 #define OW_MAX_DATA_LEN   32     // Max data length
+#define OW_2_PINS         0      // Enable if using dual pins(TX/RX) for isolation 
 ```  
 
 ---
@@ -63,6 +64,7 @@ Defines library limits and timing values. Example:
 
 1. **GPIO Pin**  
    - Configure as **Output Open-Drain** (e.g., `PC8`).  
+   - In dual pins mode, set TX pin as **Output Push-PULL** and set RX pin as ** INPUT ** (e.g., `PC8`, `PC7`). 
 
 2. **Timer**  
    - Use **internal clock source**.  
@@ -102,7 +104,7 @@ void ds18_done_cb(ow_err_t error)
 
 ```
 
-### Initialize in `main.c`  
+### Initialize 1 pin mode in `main.c`  
 ```c
 ow_init_t ow_init_struct;
 ow_init_struct.tim_handle = &htim1;
