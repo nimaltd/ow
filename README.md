@@ -28,7 +28,8 @@ The library is designed for:
 - 🔹 ROM ID operations (read, match, skip, search)  
 - 🔹 Robust error handling (reset, bus, ROM, length)  
 - 🔹 Non-blocking operation via timer callbacks  
-- 🔹 Clean and modular API  
+- 🔹 Clean and modular API
+- 🔹 Support Single and Dual pins (for insolation circuits)
 
 ---
 
