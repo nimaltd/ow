@@ -3,7 +3,7 @@
 A lightweight and efficient **1-Wire protocol** library written in C for STM32 (HAL-based).  
 
 Unlike blocking implementations, this library uses **asynchronous, non-blocking operation** driven by a single timer interrupt.  
-It can run on **any GPIO pin** configured as open-drain, making it fully flexible and easy to integrate into your STM32 projects.  
+It can run on **any GPIO pins**.  
 
 It supports a wide range of Maxim/Dallas devices, including:  
 
@@ -28,7 +28,8 @@ The library is designed for:
 - 🔹 ROM ID operations (read, match, skip, search)  
 - 🔹 Robust error handling (reset, bus, ROM, length)  
 - 🔹 Non-blocking operation via timer callbacks  
-- 🔹 Clean and modular API  
+- 🔹 Clean and modular API
+- 🔹 Support Single and Dual pins (for insolation circuits)
 
 ---
 
