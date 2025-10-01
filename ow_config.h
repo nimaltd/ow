@@ -37,7 +37,11 @@
 
 #define OW_MAX_DATA_LEN     16
 #define OW_MAX_DEVICE       5
-#define OW_2_PINS           1
+#define OW_DUAL_PINS        1
+#if (OW_DUAL_PINS == 1)
+#define OW_INVERT_RX        0
+#define OW_INVERT_TX        0
+#endif
 
 #define OW_TIM_RST          500
 #define OW_TIM_RST_DET      100

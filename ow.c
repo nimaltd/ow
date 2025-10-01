@@ -68,7 +68,7 @@ void ow_init(ow_handle_t *handle, const ow_init_t *init)
   assert_param(init->tim_cb != NULL);
 
   /* Save configuration */
-#if (OW_2_PINS == 0)
+#if (OW_DUAL_PINS == 0)
   assert_param(init->gpio != NULL);
   assert_param(IS_GPIO_PIN(init->pin) != false);
   handle->config.pin_set = init->pin;
@@ -80,19 +80,15 @@ void ow_init(ow_handle_t *handle, const ow_init_t *init)
   assert_param(init->gpio_rx != NULL);
   assert_param(IS_GPIO_PIN(init->pin_rx) != false);
   assert_param(IS_GPIO_PIN(init->pin_tx) != false);
-  if (init->invert_tx == false)
-  {
-    handle->config.pin_set = init->pin_tx;
-    handle->config.pin_reset = init->pin_tx << 16UL;
-  }
-  else
-  {
-    handle->config.pin_reset = init->pin_tx;
-    handle->config.pin_set = init->pin_tx << 16UL;
-  }
+#if (OW_INVERT_TX == 1)
+  handle->config.pin_set = init->pin_tx;
+  handle->config.pin_reset = init->pin_tx << 16UL;
+#else
+  handle->config.pin_reset = init->pin_tx;
+  handle->config.pin_set = init->pin_tx << 16UL;
+#endif
   handle->config.gpio_rx = init->gpio_rx;
   handle->config.pin_read = init->pin_rx;
-  handle->config.read_invert = init->invert_rx;
   handle->config.gpio = init->gpio_tx;
 #endif
   handle->config.tim_handle = init->tim_handle;
@@ -947,17 +943,14 @@ __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle)
 {
   assert_param(handle != NULL);
 
-#if (OW_2_PINS == 0)
+#if (OW_DUAL_PINS == 0)
   return ((handle->config.gpio->IDR & handle->config.pin_read) ? 1 : 0);
 #else
-  if (handle->config.read_invert == false)
-  {
-    return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 1 : 0);
-  }
-  else
-  {
-    return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 0 : 1);
-  }
+#if (OW_INVERT_RX == 0)
+  return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 1 : 0);
+#else
+  return ((handle->config.gpio_rx->IDR & handle->config.pin_read) ? 0 : 1);
+#endif
 #endif
 }
 
