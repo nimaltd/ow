@@ -56,7 +56,7 @@ Defines library limits and timing values. Example:
 ```c
 #define OW_MAX_DEVICE     4      // Max number of devices
 #define OW_MAX_DATA_LEN   32     // Max data length
-#define OW_2_PINS         0      // Enable if using dual pins(TX/RX) for isolation 
+#define OW_DUAL_PINS      0      // Enable if using dual pins(TX/RX) for isolation 
 ```  
 
 ---
