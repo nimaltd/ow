@@ -101,16 +101,12 @@ typedef union
 } ow_id_t;
 
 /*************************************************************************************************/
-/* Callback prototype used when operation completes */
-typedef void (*ow_done_cb_t)(ow_err_t error);
-
-/*************************************************************************************************/
 /* Used to configure OneWire handle at startup */
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;                   /* Timer handle */
   void                      (*tim_cb)(TIM_HandleTypeDef*); /* Timer callback */
-  ow_done_cb_t              done_cb;                       /* Done callback */
+  void                      (*done_cb)(ow_err_t);          /* Done callback */
 #if (OW_DUAL_PINS == 0)
   GPIO_TypeDef              *gpio;                         /* GPIO TX/RX port */
   uint16_t                  pin;                           /* GPIO TX/RX pin */
@@ -159,7 +155,7 @@ typedef struct __PACKED
 typedef struct
 {
   TIM_HandleTypeDef         *tim_handle;
-  ow_done_cb_t              done_cb;
+  void                      (*done_cb)(ow_err_t);
   GPIO_TypeDef              *gpio;
   uint32_t                  pin_set;
   uint32_t                  pin_reset;
