@@ -94,6 +94,11 @@ void ow_init(ow_handle_t *handle, const ow_init_t *init)
   handle->config.tim_handle = init->tim_handle;
   handle->config.done_cb = init->done_cb;
 
+  /* ROM ID Filter, 0 == Accept All */
+#if (OW_MAX_DEVICE > 1)
+  handle->rom_id_filter = init->rom_id_filter;
+#endif
+
   /* Register user timer callback for timing events */
   HAL_TIM_RegisterCallback(handle->config.tim_handle, HAL_TIM_PERIOD_ELAPSED_CB_ID, init->tim_cb);
 
@@ -887,8 +892,18 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
       handle->buf.bit_ph = 0;
       if (ow_crc(handle->search.rom_id, 7) == handle->search.rom_id[7])
       {
-        memcpy(&handle->rom_id[handle->rom_id_found], handle->search.rom_id, 8);
-        handle->rom_id_found++;
+        /* ROM ID Filter not enabled */
+        if (handle->rom_id_filter == 0)
+        {
+          memcpy(&handle->rom_id[handle->rom_id_found], handle->search.rom_id, 8);
+          handle->rom_id_found++;
+        }
+        /* Selected ROM ID Filter */
+        else if (handle->rom_id_filter == handle->search.rom_id[0])
+        {
+          memcpy(&handle->rom_id[handle->rom_id_found], handle->search.rom_id, 8);
+          handle->rom_id_found++;
+        }
       }
       memset(handle->search.rom_id, 0, 8);
 

@@ -107,6 +107,9 @@ typedef struct
   TIM_HandleTypeDef         *tim_handle;                   /* Timer handle */
   void                      (*tim_cb)(TIM_HandleTypeDef*); /* Timer callback */
   void                      (*done_cb)(ow_err_t);          /* Done callback */
+#if (OW_MAX_DEVICE > 1)
+  uint8_t                   rom_id_filter;                 /* ROM ID Filter , 0 == Accept All */
+#endif
 #if (OW_DUAL_PINS == 0)
   GPIO_TypeDef              *gpio;                         /* GPIO TX/RX port */
   uint16_t                  pin;                           /* GPIO TX/RX pin */
@@ -174,6 +177,7 @@ typedef struct
   ow_buf_t                  buf;                   /* Transfer buffer */
   ow_state_t                state;                 /* Current state */
   ow_err_t                  error;                 /* Last error */
+  uint8_t                   rom_id_filter;         /* Filter of ROM ID */
   ow_id_t                   rom_id[OW_MAX_DEVICE]; /* List of ROM IDs */
 #if (OW_MAX_DEVICE > 1)
   uint8_t                   rom_id_found;          /* Number of devices found */
