@@ -113,6 +113,7 @@ ow_init_struct.gpio = GPIOC;
 ow_init_struct.pin = GPIO_PIN_8;
 ow_init_struct.tim_cb = ds18_tim_cb;
 ow_init_struct.done_cb = ds18_done_cb;   // Optional: callback when transfer is done, or can use NULL
+ow_init_struct.rom_id_filter = 0;        // 0 = Accept All, or use a value. (Available if OW_MAX_DEVICE > 1) 
 
 ow_init(&ds18, &ow_init_struct);
 ```  
