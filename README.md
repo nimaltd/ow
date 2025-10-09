@@ -86,7 +86,7 @@ Defines library limits and timing values. Example:
 
 ### Define a handle  
 ```c
-ow_handle_t ds18;
+ow_t ds18;
 ```  
 
 ### Create a timer callback  
