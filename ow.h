@@ -184,43 +184,43 @@ typedef struct
   ow_search_t               search;                /* Search state */
 #endif
 
-} ow_handle_t;
+} ow_t;
 
 /*************************************************************************************************/
 /** API Functions **/
 /*************************************************************************************************/
 
 /* Initialize OneWire driver */
-void      ow_init(ow_handle_t *handle, const ow_init_t *init);
+void      ow_init(ow_t *handle, const ow_init_t *init);
 
 /* Must be called in timer ISR to handle timing */
-void      ow_callback(ow_handle_t *handle);
+void      ow_callback(ow_t *handle);
 
 /* Calculate CRC8 for given data */
 uint8_t   ow_crc(const uint8_t *data, uint16_t len);
 
 /* Check if driver is busy */
-bool      ow_is_busy(ow_handle_t *handle);
+bool      ow_is_busy(ow_t *handle);
 
 /* Get last error code */
-ow_err_t  ow_last_error(ow_handle_t *handle);
+ow_err_t  ow_last_error(ow_t *handle);
 
 /* Update device ROM ID(s) on bus */
-ow_err_t  ow_update_rom_id(ow_handle_t *handle);
+ow_err_t  ow_update_rom_id(ow_t *handle);
 
 /* Transfer a command and optional data to/from a specific 1-Wire device by SKIP ROM */
-ow_err_t  ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
+ow_err_t  ow_xfer(ow_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
 
 #if (OW_MAX_DEVICE > 1)
 /* Transfer a command and optional data to/from a specific 1-Wire device by ROM ID index */
-ow_err_t  ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
+ow_err_t  ow_xfer_by_id(ow_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len);
 
 /* Return number of devices found */
-uint8_t   ow_devices(ow_handle_t *handle);
+uint8_t   ow_devices(ow_t *handle);
 #endif
 
 /* Retrieve last response data */
-uint16_t  ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size);
+uint16_t  ow_read_resp(ow_t *handle, uint8_t *data, uint16_t data_size);
 
 /*************************************************************************************************/
 /** End of File **/

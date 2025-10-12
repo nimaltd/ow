@@ -31,24 +31,24 @@
 /*************************************************************************************************/
 
 /* Start OneWire communication */
-ow_err_t  ow_start(ow_handle_t *handle);
+ow_err_t  ow_start(ow_t *handle);
 
 /* Stop OneWire communication */
-void      ow_stop(ow_handle_t *handle);
+void      ow_stop(ow_t *handle);
 
 /* Handle transfer state machine */
-__STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle);
+__STATIC_FORCEINLINE void ow_state_xfer(ow_t *handle);
 
 #if (OW_MAX_DEVICE > 1)
 /* Handle search state machine */
-__STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle);
+__STATIC_FORCEINLINE void ow_state_search(ow_t *handle);
 #endif
 
 /* Write one bit on bus */
-__STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high);
+__STATIC_FORCEINLINE void ow_write_bit(ow_t *handle, bool high);
 
 /* Read one bit from bus */
-__STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
+__STATIC_FORCEINLINE uint8_t ow_read_bit(ow_t *handle);
 
 /*************************************************************************************************/
 /** Function Implementations **/
@@ -60,7 +60,7 @@ __STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle);
  * @param[in,out]  handle: Pointer to the 1-Wire handle to initialize.
  * @param[in]  init: Pointer to initialization data (GPIO, pin, timer, callback).
  */
-void ow_init(ow_handle_t *handle, const ow_init_t *init)
+void ow_init(ow_t *handle, const ow_init_t *init)
 {
   assert_param(handle != NULL);
   assert_param(init != NULL);
@@ -111,7 +111,7 @@ void ow_init(ow_handle_t *handle, const ow_init_t *init)
  * @brief Handle 1-Wire timer callback and call state handlers.
  * @param[in] handle: Pointer to the 1-Wire handle.
  */
-void ow_callback(ow_handle_t *handle)
+void ow_callback(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -173,7 +173,7 @@ uint8_t ow_crc(const uint8_t *data, uint16_t len)
  * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval true if busy, false if idle
  */
-bool ow_is_busy(ow_handle_t *handle)
+bool ow_is_busy(ow_t *handle)
 {
   assert_param(handle != NULL);
   return (handle->state != OW_STATE_IDLE) ? true : false;
@@ -185,7 +185,7 @@ bool ow_is_busy(ow_handle_t *handle)
  * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_last_error(ow_handle_t *handle)
+ow_err_t ow_last_error(ow_t *handle)
 {
   assert_param(handle != NULL);
   return handle->error;
@@ -198,7 +198,7 @@ ow_err_t ow_last_error(ow_handle_t *handle)
  * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_update_rom_id(ow_handle_t *handle)
+ow_err_t ow_update_rom_id(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -234,7 +234,7 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
  * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval Last error code (ow_err_t)
  */
-ow_err_t ow_update_rom_id(ow_handle_t *handle)
+ow_err_t ow_update_rom_id(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -274,7 +274,7 @@ ow_err_t ow_update_rom_id(ow_handle_t *handle)
  * @param[in] r_len Number of bytes to read (can be 0).
  * @retval Error code (ow_err_t).
  */
-ow_err_t ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
+ow_err_t ow_xfer(ow_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
 {
   assert_param(handle != NULL);
 
@@ -347,7 +347,7 @@ ow_err_t ow_xfer(ow_handle_t *handle, uint8_t fn_cmd, const uint8_t *w_data, uin
  * @param[in] r_len Number of bytes to read into the internal buffer (can be 0).
  * @retval Error code (ow_err_t).
  */
-ow_err_t ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
+ow_err_t ow_xfer_by_id(ow_t *handle, uint8_t rom_id, uint8_t fn_cmd, const uint8_t *w_data, uint16_t w_len, uint16_t r_len)
 {
   assert_param(handle != NULL);
 
@@ -426,7 +426,7 @@ ow_err_t ow_xfer_by_id(ow_handle_t *handle, uint8_t rom_id, uint8_t fn_cmd, cons
  * @param[in] handle: Pointer to 1-Wire handle.
  * @retval Count of found devices
  */
-uint8_t ow_devices(ow_handle_t *handle)
+uint8_t ow_devices(ow_t *handle)
 {
   assert_param(handle != NULL);
   return handle->rom_id_found;
@@ -441,7 +441,7 @@ uint8_t ow_devices(ow_handle_t *handle)
  * @param[in] data_size: Size of the user buffer in bytes.
  * @retval Number of bytes copied to the user buffer.
  */
-uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
+uint16_t ow_read_resp(ow_t *handle, uint8_t *data, uint16_t data_size)
 {
   assert_param(handle != NULL);
   assert_param(data != NULL);
@@ -487,7 +487,7 @@ uint16_t ow_read_resp(ow_handle_t *handle, uint8_t *data, uint16_t data_size)
  * @param[in] handle: Pointer to the 1-Wire handle.
  * @retval OW_ERR_NONE on success, or error code (OW_ERR_BUSY, OW_ERR_BUS).
  */
-ow_err_t ow_start(ow_handle_t *handle)
+ow_err_t ow_start(ow_t *handle)
 {
   ow_err_t ow_err = OW_ERR_NONE;
   assert_param(handle != NULL);
@@ -528,7 +528,7 @@ ow_err_t ow_start(ow_handle_t *handle)
  * @brief Stop 1-Wire transfer and release the bus.
  * @param[in] handle Pointer to the 1-Wire handle.
  */
-void ow_stop(ow_handle_t *handle)
+void ow_stop(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -553,7 +553,7 @@ void ow_stop(ow_handle_t *handle)
  * @brief 1-Wire state machine: handle transfer phases (reset, write, read).
  * @param[in] handle Pointer to the 1-Wire handle.
  */
-__STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
+__STATIC_FORCEINLINE void ow_state_xfer(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -701,7 +701,7 @@ __STATIC_FORCEINLINE void ow_state_xfer(ow_handle_t *handle)
  * Implements non-blocking search, handles reset, read/write bits,
  * resolves discrepancies, stores found ROMs, and sets state done.
  */
-__STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
+__STATIC_FORCEINLINE void ow_state_search(ow_t *handle)
 {
   assert_param(handle != NULL);
 
@@ -941,7 +941,7 @@ __STATIC_FORCEINLINE void ow_state_search(ow_handle_t *handle)
  * @param[in] handle: Pointer to 1-Wire handle.
  * @param[in] high: true to set high, false to set low.
  */
-__STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
+__STATIC_FORCEINLINE void ow_write_bit(ow_t *handle, bool high)
 {
   assert_param(handle != NULL);
 
@@ -954,7 +954,7 @@ __STATIC_FORCEINLINE void ow_write_bit(ow_handle_t *handle, bool high)
  * @param[in] handle: Pointer to 1-Wire handle.
  * @retval 1 if high, 0 if low
  */
-__STATIC_FORCEINLINE uint8_t ow_read_bit(ow_handle_t *handle)
+__STATIC_FORCEINLINE uint8_t ow_read_bit(ow_t *handle)
 {
   assert_param(handle != NULL);
 
