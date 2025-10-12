@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include "ow.h"
-#include "tim.h"
 
 /*************************************************************************************************/
 /** Private Function prototype **/
