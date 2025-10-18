@@ -15,9 +15,9 @@ It supports a wide range of Maxim/Dallas devices, including:
 
 The library is designed for:  
 
-- Projects where CPU blocking must be avoided  
-- Applications that need **multi-device 1-Wire bus support**  
-- Easy portability across different STM32 families (F0/F1/F3/F4/F7/G0/G4/H7, etc.)  
+- Projects where CPU blocking must be avoided.  
+- Applications that need **multi-device 1-Wire bus support**.
+- Easy portability across All STM32 families.  
 
 ---
 
